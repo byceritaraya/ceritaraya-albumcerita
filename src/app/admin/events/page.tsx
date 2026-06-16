@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/service';
 
 type EventState = 'draft' | 'published' | 'expired' | 'archived';
@@ -74,10 +75,15 @@ export default async function AdminEventsPage() {
               {(events as Event[]).map((event) => (
                 <tr
                   key={event.id}
-                  className="hover:bg-gray-50 transition-colors duration-100"
+                  className="hover:bg-gray-50 transition-colors duration-100 group"
                 >
                   <td className="px-5 py-4 font-medium text-gray-900">
-                    {event.name}
+                    <Link
+                      href={`/admin/events/${event.event_id}`}
+                      className="hover:text-blue-600 transition-colors"
+                    >
+                      {event.name}
+                    </Link>
                   </td>
                   <td className="px-5 py-4 font-mono text-xs text-gray-500">
                     {event.event_id}
