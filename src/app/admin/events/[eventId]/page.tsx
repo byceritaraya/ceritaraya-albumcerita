@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/service';
+import { decodePinFlash, PIN_FLASH_COOKIE } from '@/lib/pin-flash';
+import { PinBanner } from './pin-banner';
 
 type EventState = 'draft' | 'published' | 'expired' | 'archived';
 
@@ -51,6 +54,11 @@ interface PageProps {
 export default async function AdminEventDetailPage({ params }: PageProps) {
   const { eventId } = await params;
 
+  // Read one-time PIN flash cookie (set by createEvent / future resetPin).
+  const cookieStore = await cookies();
+  const flashRaw = cookieStore.get(PIN_FLASH_COOKIE)?.value;
+  const flashPin = decodePinFlash(flashRaw, eventId);
+
   const supabase = createServiceClient();
 
   const { data: event, error } = await supabase
@@ -81,6 +89,8 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
+      {/* One-time PIN banner — only rendered right after creation or PIN reset */}
+      {flashPin && <PinBanner eventId={e.event_id} pin={flashPin} />}
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-sm text-gray-400">
         <Link href="/admin/events" className="hover:text-gray-600 transition-colors">

@@ -37,11 +37,20 @@ export default async function AdminEventsPage() {
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Events</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          All events managed through AlbumCerita.
-        </p>
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Events</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            All events managed through AlbumCerita.
+          </p>
+        </div>
+        <Link
+          href="/admin/events/new"
+          id="create-event-button"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition-colors shrink-0"
+        >
+          + New Event
+        </Link>
       </div>
 
       {/* Error state */}
