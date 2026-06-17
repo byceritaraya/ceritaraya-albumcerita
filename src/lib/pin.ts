@@ -24,3 +24,21 @@ export function hashPin(pin: string): string {
   const hash = crypto.scryptSync(pin, salt, 64).toString('hex');
   return `${salt}:${hash}`;
 }
+
+/**
+ * Verifies a given PIN against a stored PIN hash.
+ * @param pin The plain-text PIN provided by the user.
+ * @param storedPinHash The hashed PIN stored in the database.
+ * @returns true if the PIN is valid, false otherwise.
+ */
+export function verifyPin(pin: string, storedPinHash: string): boolean {
+  try {
+    const [salt, storedHash] = storedPinHash.split(':');
+    if (!salt || !storedHash) return false;
+    const hash = crypto.scryptSync(pin, salt, 64).toString('hex');
+    // Using crypto.timingSafeEqual for security against timing attacks
+    return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(storedHash));
+  } catch (error) {
+    return false;
+  }
+}
