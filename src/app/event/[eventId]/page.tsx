@@ -52,6 +52,13 @@ export default async function EventPage({ params }: PageProps) {
     redirect('/join');
   }
 
+  // Count photos already uploaded by this contributor for this event
+  const { count: photosUsed } = await supabase
+    .from('photos')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', event.id)
+    .eq('guest_token', contributorId);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center pt-12 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -64,11 +71,11 @@ export default async function EventPage({ params }: PageProps) {
         </div>
         
         <div className="p-8 bg-gray-50">
-          <UploadForm eventId={eventId} />
-          
-          <p className="mt-6 text-xs text-center text-gray-400">
-            You can upload up to <span className="font-semibold text-gray-600">{event.photos_per_guest} photos</span>
-          </p>
+          <UploadForm
+            eventId={eventId}
+            photosUsed={photosUsed ?? 0}
+            photosPerGuest={event.photos_per_guest}
+          />
         </div>
       </div>
     </div>
