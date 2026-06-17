@@ -6,6 +6,7 @@ import { clearPinFlash } from './actions';
 interface PinModalProps {
   eventId: string;
   pin: string;
+  isReset?: boolean;
 }
 
 function CopyButton({ value }: { value: string }) {
@@ -73,7 +74,7 @@ function CopyButton({ value }: { value: string }) {
  *
  * Reused as-is by the future Reset PIN flow.
  */
-export function PinBanner({ eventId, pin }: PinModalProps) {
+export function PinBanner({ eventId, pin, isReset }: PinModalProps) {
   const [dismissed, setDismissed] = useState(false);
 
   async function handleDismiss() {
@@ -133,7 +134,7 @@ export function PinBanner({ eventId, pin }: PinModalProps) {
             id="pin-modal-title"
             className="text-lg font-bold text-gray-900"
           >
-            Event Created Successfully
+            {isReset ? 'PIN Reset Successfully' : 'Event Created Successfully'}
           </h2>
 
           {/* Subtitle */}

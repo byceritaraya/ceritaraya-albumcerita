@@ -22,8 +22,8 @@ export const PIN_FLASH_COOKIE = 'pin_flash';
 export const PIN_FLASH_MAX_AGE = 300; // seconds
 
 /** Encodes eventId + raw PIN into the cookie value. */
-export function encodePinFlash(eventId: string, pin: string): string {
-  return `${eventId}:${pin}`;
+export function encodePinFlash(eventId: string, pin: string, isReset: boolean = false): string {
+  return `${eventId}:${pin}${isReset ? ':reset' : ''}`;
 }
 
 /**
@@ -33,12 +33,12 @@ export function encodePinFlash(eventId: string, pin: string): string {
 export function decodePinFlash(
   cookieValue: string | undefined,
   eventId: string
-): string | null {
+): { pin: string; isReset: boolean } | null {
   if (!cookieValue) return null;
-  const colonIndex = cookieValue.indexOf(':');
-  if (colonIndex === -1) return null;
-  const storedEventId = cookieValue.slice(0, colonIndex);
-  const pin = cookieValue.slice(colonIndex + 1);
-  if (storedEventId !== eventId || !pin) return null;
-  return pin;
+  const parts = cookieValue.split(':');
+  if (parts.length < 2) return null;
+  if (parts[0] !== eventId) return null;
+  const pin = parts[1];
+  const isReset = parts[2] === 'reset';
+  return { pin, isReset };
 }

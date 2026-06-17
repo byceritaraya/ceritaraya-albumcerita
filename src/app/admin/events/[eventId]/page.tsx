@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/service';
 import { decodePinFlash, PIN_FLASH_COOKIE } from '@/lib/pin-flash';
 import { PinBanner } from './pin-banner';
+import { ResetPinButton } from './reset-pin-button';
 
 type EventState = 'draft' | 'published' | 'expired' | 'archived';
 
@@ -57,7 +58,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
   // Read one-time PIN flash cookie (set by createEvent / future resetPin).
   const cookieStore = await cookies();
   const flashRaw = cookieStore.get(PIN_FLASH_COOKIE)?.value;
-  const flashPin = decodePinFlash(flashRaw, eventId);
+  const flashData = decodePinFlash(flashRaw, eventId);
 
   const supabase = createServiceClient();
 
@@ -90,7 +91,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       {/* One-time PIN banner — only rendered right after creation or PIN reset */}
-      {flashPin && <PinBanner eventId={e.event_id} pin={flashPin} />}
+      {flashData && <PinBanner eventId={e.event_id} pin={flashData.pin} isReset={flashData.isReset} />}
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-sm text-gray-400">
         <Link href="/admin/events" className="hover:text-gray-600 transition-colors">
@@ -106,11 +107,14 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{e.name}</h1>
           <p className="mt-1 font-mono text-xs text-gray-400">{e.event_id}</p>
         </div>
-        <span
-          className={`ml-auto inline-flex items-center rounded-full px-3 py-1 text-xs font-medium capitalize ${STATE_STYLES[e.state] ?? 'bg-gray-100 text-gray-600'}`}
-        >
-          {e.state}
-        </span>
+        <div className="ml-auto flex items-center gap-3">
+          <ResetPinButton eventId={e.event_id} />
+          <span
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium capitalize ${STATE_STYLES[e.state] ?? 'bg-gray-100 text-gray-600'}`}
+          >
+            {e.state}
+          </span>
+        </div>
       </div>
 
       {/* Detail card */}
