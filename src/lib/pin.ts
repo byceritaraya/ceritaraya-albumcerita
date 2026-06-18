@@ -38,7 +38,7 @@ export function verifyPin(pin: string, storedPinHash: string): boolean {
     const hash = crypto.scryptSync(pin, salt, 64).toString('hex');
     // Using crypto.timingSafeEqual for security against timing attacks
     return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(storedHash));
-  } catch (error) {
+  } catch {
     return false;
   }
 }

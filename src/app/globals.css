@@ -1,26 +1,97 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base Backgrounds */
+  --bg-primary: #FAF8F5;
+  --bg-secondary: #F5F1EB;
+  --bg-tertiary: #EFE8DD;
+
+  /* Text Colors */
+  --text-primary: #2B2B2B;
+  --text-secondary: #6B6761;
+  --text-muted: #8A857F;
+
+  /* Theme Defaults (Sage) */
+  --theme-primary: #87937A;
+  --theme-secondary: #AAB5A0;
+
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+}
+
+/* Theme Classes */
+.theme-sage {
+  --theme-primary: #87937A;
+  --theme-secondary: #AAB5A0;
+  --bg-primary: #FAF8F5;
+  --bg-secondary: #F3F0E9;
+  --bg-tertiary: #EBE5DA;
+  --text-primary: #2B3028;
+  --text-secondary: #606859;
+  --text-muted: #858E7D;
+}
+.theme-ocean {
+  --theme-primary: #7A92A8;
+  --theme-secondary: #A7B7C5;
+  --bg-primary: #F5F7FA;
+  --bg-secondary: #ECF0F5;
+  --bg-tertiary: #E1E7ED;
+  --text-primary: #1A2633;
+  --text-secondary: #4A5F73;
+  --text-muted: #728AA0;
+}
+.theme-terracotta {
+  --theme-primary: #B5846A;
+  --theme-secondary: #D1AF9C;
+  --bg-primary: #FCF8F6;
+  --bg-secondary: #F7EFEA;
+  --bg-tertiary: #F2E4DB;
+  --text-primary: #3B2A22;
+  --text-secondary: #7A5B4D;
+  --text-muted: #A3806E;
+}
+.theme-blush {
+  --theme-primary: #C9A3A6;
+  --theme-secondary: #DFC8CA;
+  --bg-primary: #FCF5F6;
+  --bg-secondary: #F8EAEC;
+  --bg-tertiary: #F2DFE1;
+  --text-primary: #3D2D2E;
+  --text-secondary: #7D6365;
+  --text-muted: #A88D8F;
+}
+.theme-charcoal {
+  --theme-primary: #5D6167;
+  --theme-secondary: #8A9098;
+  --bg-primary: #F8F9FA;
+  --bg-secondary: #F1F3F5;
+  --bg-tertiary: #E9ECEF;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #868E96;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-playfair), ui-serif, Georgia, serif;
+  
+  --color-theme-primary: var(--theme-primary);
+  --color-theme-secondary: var(--theme-secondary);
+  
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
 }
+

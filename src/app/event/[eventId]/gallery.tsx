@@ -107,16 +107,6 @@ function PhotoModal({
   );
 }
 
-// ─── Stat pill ───────────────────────────────────────────────────────────────
-function StatPill({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <span className="text-2xl font-bold text-gray-900">{value}</span>
-      <span className="text-xs text-gray-500">{label}</span>
-    </div>
-  );
-}
-
 // ─── Main Gallery component ──────────────────────────────────────────────────
 export function Gallery({ photos, totalPhotos, totalContributors }: GalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -130,20 +120,26 @@ export function Gallery({ photos, totalPhotos, totalContributors }: GalleryProps
   );
 
   return (
-    <section className="mt-6 w-full">
+    <section className="mt-6 w-full text-left">
       {/* ── Section header ── */}
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-900">Recent Moments</h2>
+      <div className="mb-6">
+        <h2 className="font-heading text-2xl text-[var(--text-primary)]">Captured Moments</h2>
         {photos.length > 0 && (
-          <span className="text-xs text-gray-400">{photos.length} shown</span>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">{photos.length} shown</p>
         )}
       </div>
 
       {/* ── Stats row ── */}
-      <div className="mb-5 flex items-center justify-around rounded-xl border border-gray-100 bg-white py-4">
-        <StatPill value={totalPhotos} label="Total Photos" />
-        <div className="h-8 w-px bg-gray-100" />
-        <StatPill value={totalContributors} label="Contributors" />
+      <div className="mb-8 flex items-center gap-6">
+        <div className="flex flex-col">
+          <span className="text-3xl font-heading text-[var(--text-primary)] leading-none">{totalPhotos}</span>
+          <span className="text-xs uppercase tracking-widest text-[var(--text-muted)] mt-1">Total Photos</span>
+        </div>
+        <div className="h-8 w-px bg-[var(--bg-tertiary)]" />
+        <div className="flex flex-col">
+          <span className="text-3xl font-heading text-[var(--text-primary)] leading-none">{totalContributors}</span>
+          <span className="text-xs uppercase tracking-widest text-[var(--text-muted)] mt-1">Moment Takers</span>
+        </div>
       </div>
 
       {/* ── Empty state ── */}

@@ -125,6 +125,17 @@ export default function NewEventPage() {
             />
           </Field>
 
+          {/* Host Name */}
+          <Field label="Host Name (Optional)" htmlFor="host_name">
+            <input
+              id="host_name"
+              name="host_name"
+              type="text"
+              placeholder="e.g. Budi & Ani"
+              className={inputClass}
+            />
+          </Field>
+
           {/* Event Type */}
           <Field label="Event Type" htmlFor="event_type">
             <select
@@ -137,6 +148,22 @@ export default function NewEventPage() {
               <option value="birthday">Birthday</option>
               <option value="corporate">Corporate</option>
               <option value="other">Other</option>
+            </select>
+          </Field>
+
+          {/* Theme */}
+          <Field label="Theme (Optional)" htmlFor="theme">
+            <select
+              id="theme"
+              name="theme"
+              defaultValue="Sage"
+              className={selectClass}
+            >
+              <option value="Sage">Sage</option>
+              <option value="Ocean">Ocean</option>
+              <option value="Terracotta">Terracotta</option>
+              <option value="Blush">Blush</option>
+              <option value="Charcoal">Charcoal</option>
             </select>
           </Field>
 

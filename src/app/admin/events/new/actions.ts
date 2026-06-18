@@ -2,7 +2,6 @@
 
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import crypto from 'crypto';
 import { createServiceClient } from '@/lib/supabase/service';
 import { generatePin, hashPin } from '@/lib/pin';
 import {
@@ -55,6 +54,10 @@ export async function createEvent(
   const retentionMonths = Number(formData.get('retention_months'));
   const maxContributors = Number(formData.get('max_contributors'));
   const photosPerGuest = Number(formData.get('photos_per_guest'));
+  
+  // Optional new fields
+  const hostName = (formData.get('host_name') as string)?.trim() || null;
+  const theme = (formData.get('theme') as string)?.trim() || 'Sage';
 
   // Basic validation
   if (!name) return { error: 'Event name is required.' };
@@ -72,9 +75,19 @@ export async function createEvent(
   const slug = generateSlug(name, eventId);
   const expiresAt = getExpiresAt(retentionMonths);
 
-  // Generate PIN — only the hash goes to the database.
+  // Generate PINs
   const pin = generatePin();
   const pinHash = hashPin(pin);
+  
+  const hostPin = generatePin();
+  const hostPinHash = hashPin(hostPin);
+  
+  const guestPin = generatePin();
+  const guestPinHash = hashPin(guestPin);
+
+  // Generate host and guest slugs (8 random alphanumeric chars each)
+  const hostSlug = generateEventId();
+  const guestSlug = generateEventId();
 
   const supabase = createServiceClient();
 
@@ -89,14 +102,22 @@ export async function createEvent(
     max_contributors: maxContributors,
     retention_months: retentionMonths,
     expires_at: expiresAt,
+    
+    // New fields
+    host_slug: hostSlug,
+    guest_slug: guestSlug,
+    host_pin_hash: hostPinHash,
+    guest_pin_hash: guestPinHash,
+    guest_pin: guestPin,
+    host_name: hostName,
+    theme: theme,
   });
 
   if (error) return { error: error.message };
 
-  // Set a one-time flash cookie so the detail page can show the PIN once.
-  // The raw PIN is NEVER stored in any database column.
+  // Set a one-time flash cookie so the detail page can show the PINs once.
   const cookieStore = await cookies();
-  cookieStore.set(PIN_FLASH_COOKIE, encodePinFlash(eventId, pin), {
+  cookieStore.set(PIN_FLASH_COOKIE, encodePinFlash(eventId, pin, false, hostPin, guestPin), {
     httpOnly: true,
     sameSite: 'strict',
     path: '/admin/events',

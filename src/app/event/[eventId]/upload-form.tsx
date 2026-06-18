@@ -320,53 +320,7 @@ export function UploadForm({
   return (
     <div className="flex flex-col gap-4">
 
-      {/* ── Shot counter ── */}
-      {(!unlimited || capturedCount > 0) && (
-        <div className="rounded-xl border border-gray-100 bg-white p-4">
-          {!unlimited && (
-            <>
-              <div className="mb-2 flex items-center justify-between text-xs font-medium text-gray-500">
-                <span>Shots Remaining</span>
-                <span className={remainingSlots <= 0 ? 'font-bold text-red-500' : 'font-bold text-gray-700'}>
-                  {remainingSlots <= 0 ? 'Full' : `${remainingSlots} left`}
-                </span>
-              </div>
-              {/* Film-strip progress */}
-              <div className="flex gap-1">
-                {Array.from({ length: photosPerGuest }).map((_, i) => {
-                  const used = i < photosUsed;
-                  const queued = !used && i < photosUsed + activeInQueue;
-                  return (
-                    <div
-                      key={i}
-                      className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                        used
-                          ? 'bg-emerald-400'
-                          : queued
-                          ? 'bg-amber-300'
-                          : 'bg-gray-100'
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-              <div className="mt-2 flex justify-between text-[11px] text-gray-400">
-                <span>{photosUsed} uploaded</span>
-                {activeInQueue > 0 && <span className="text-amber-500">{activeInQueue} in queue</span>}
-                <span>{photosPerGuest} total</span>
-              </div>
-            </>
-          )}
-          {unlimited && capturedCount > 0 && (
-            <div className="text-center text-xs text-gray-500">
-              <span className="font-semibold text-gray-800">{capturedCount}</span> moment{capturedCount !== 1 ? 's' : ''} captured
-              {doneCount > 0 && (
-                <span className="ml-2 text-emerald-600">· {doneCount} uploaded</span>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      {/* ── Shot counter (Removed — redundant with AlbumView stats) ── */}
 
       {/* ── Global status message ── */}
       {globalMessage && (
@@ -410,7 +364,7 @@ export function UploadForm({
               <button
                 type="button"
                 onClick={() => cameraInputRef.current?.click()}
-                className="flex aspect-square w-full items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 text-gray-300 transition hover:border-gray-300 hover:text-gray-400"
+                className="flex aspect-square w-full items-center justify-center rounded-xl border-2 border-dashed border-[var(--theme-secondary)]/50 bg-[var(--theme-primary)]/5 text-[var(--theme-primary)]/60 transition hover:border-[var(--theme-primary)] hover:text-[var(--theme-primary)]"
                 aria-label="Capture another moment"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7">
@@ -428,7 +382,7 @@ export function UploadForm({
           type="button"
           onClick={handleUpload}
           disabled={isUploading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--theme-primary)] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
         >
           {isUploading ? (
             <>
@@ -446,41 +400,34 @@ export function UploadForm({
 
       {/* ── Capture / gallery buttons ── */}
       {canCapture && (
-        <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3">
           {/* Primary: camera */}
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
             disabled={isUploading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
           >
-            <IconCamera className="h-5 w-5" />
-            {queue.length === 0 ? 'Capture Moment' : 'Capture Another'}
+            <IconCamera className="h-4 w-4" />
+            Take Photo
           </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 text-xs text-gray-400">
-            <div className="h-px flex-1 bg-gray-200" />
-            <span>or</span>
-            <div className="h-px flex-1 bg-gray-200" />
-          </div>
 
           {/* Secondary: gallery */}
           <button
             type="button"
             onClick={() => galleryInputRef.current?.click()}
             disabled={isUploading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+            className="flex flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-primary)] px-5 py-3 text-sm font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
           >
-            <IconGallery className="h-5 w-5 text-gray-500" />
-            Add from Gallery
+            <IconGallery className="h-4 w-4 text-[var(--theme-primary)]" />
+            From Gallery
           </button>
         </div>
       )}
 
       {/* Quota full */}
       {!canCapture && pendingCount === 0 && (
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-[var(--text-muted)]">
           {unlimited
             ? 'All moments have been uploaded.'
             : "You've used all your shots for this event."}
