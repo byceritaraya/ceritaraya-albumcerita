@@ -18,7 +18,7 @@ function SubmitButton({ text }: { text: string }) {
   );
 }
 
-export function GuestAuth({ guestSlug, initialStep = 'pin' }: { guestSlug: string, initialStep?: 'pin' | 'name' }) {
+export function GuestAuth({ slug, initialStep = 'pin' }: { slug: string, initialStep?: 'pin' | 'name' }) {
   const searchParams = useSearchParams();
   const urlPin = searchParams.get('pin');
 
@@ -52,7 +52,7 @@ export function GuestAuth({ guestSlug, initialStep = 'pin' }: { guestSlug: strin
         </div>
 
         <form action={formAction} className="flex flex-col gap-5">
-          <input type="hidden" name="guest_slug" value={guestSlug} />
+          <input type="hidden" name="slug" value={slug} />
           <input type="hidden" name="step" value={step} />
           
           {state?.error && (

@@ -19,7 +19,7 @@
   --foreground: var(--text-primary);
 }
 
-/* Theme Classes */
+/* Theme Classes — Approved Palette */
 .theme-sage {
   --theme-primary: #87937A;
   --theme-secondary: #AAB5A0;
@@ -29,26 +29,6 @@
   --text-primary: #2B3028;
   --text-secondary: #606859;
   --text-muted: #858E7D;
-}
-.theme-ocean {
-  --theme-primary: #7A92A8;
-  --theme-secondary: #A7B7C5;
-  --bg-primary: #F5F7FA;
-  --bg-secondary: #ECF0F5;
-  --bg-tertiary: #E1E7ED;
-  --text-primary: #1A2633;
-  --text-secondary: #4A5F73;
-  --text-muted: #728AA0;
-}
-.theme-terracotta {
-  --theme-primary: #B5846A;
-  --theme-secondary: #D1AF9C;
-  --bg-primary: #FCF8F6;
-  --bg-secondary: #F7EFEA;
-  --bg-tertiary: #F2E4DB;
-  --text-primary: #3B2A22;
-  --text-secondary: #7A5B4D;
-  --text-muted: #A3806E;
 }
 .theme-blush {
   --theme-primary: #C9A3A6;
@@ -60,15 +40,45 @@
   --text-secondary: #7D6365;
   --text-muted: #A88D8F;
 }
-.theme-charcoal {
-  --theme-primary: #5D6167;
-  --theme-secondary: #8A9098;
-  --bg-primary: #F8F9FA;
-  --bg-secondary: #F1F3F5;
-  --bg-tertiary: #E9ECEF;
-  --text-primary: #212529;
-  --text-secondary: #495057;
-  --text-muted: #868E96;
+.theme-slate {
+  --theme-primary: #7A8BA0;
+  --theme-secondary: #A4B3C3;
+  --bg-primary: #F6F8FA;
+  --bg-secondary: #EDF0F4;
+  --bg-tertiary: #E2E7ED;
+  --text-primary: #1E2A35;
+  --text-secondary: #4A5C6D;
+  --text-muted: #738291;
+}
+.theme-sand {
+  --theme-primary: #B09A7E;
+  --theme-secondary: #CEC0AB;
+  --bg-primary: #FBF8F4;
+  --bg-secondary: #F5EFE5;
+  --bg-tertiary: #EEE4D5;
+  --text-primary: #352B1F;
+  --text-secondary: #6B5B47;
+  --text-muted: #9A8C79;
+}
+.theme-mauve {
+  --theme-primary: #A08EA8;
+  --theme-secondary: #C3B4CA;
+  --bg-primary: #FAF7FB;
+  --bg-secondary: #F3EDF6;
+  --bg-tertiary: #EAE1EE;
+  --text-primary: #2E2433;
+  --text-secondary: #665671;
+  --text-muted: #937F9E;
+}
+.theme-ivory {
+  --theme-primary: #A89880;
+  --theme-secondary: #C8BBAA;
+  --bg-primary: #FDFCF9;
+  --bg-secondary: #F7F4EE;
+  --bg-tertiary: #F0EBE1;
+  --text-primary: #302820;
+  --text-secondary: #665A4D;
+  --text-muted: #948679;
 }
 
 @theme inline {

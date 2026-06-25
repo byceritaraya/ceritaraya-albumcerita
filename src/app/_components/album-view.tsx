@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadForm } from '@/app/event/[eventId]/upload-form';
-import { togglePhotoVisibility } from '@/app/host/[host_slug]/actions';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,7 +16,7 @@ export interface AlbumPhoto {
 }
 
 export interface AlbumViewProps {
-  role: 'host' | 'guest';
+  role: 'host' | 'guest' | 'public';
   eventId: string;          // legacy event_id for upload actions
   eventName: string;
   hostName?: string;
@@ -32,7 +31,9 @@ export interface AlbumViewProps {
   photosPerGuest?: number;
   // Host-only
   guestUrl?: string;
-  hostSlug?: string;
+  slug?: string;
+  isPublished?: boolean;
+  publicUrl?: string;
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -172,7 +173,7 @@ export function AlbumView(props: AlbumViewProps) {
     role, eventId, eventName, hostName, coverImageUrl, theme,
     photos: initialPhotos, totalPhotos, totalContributors,
     contributorName, photosUsed = 0, photosPerGuest = 0,
-    guestUrl, hostSlug,
+    guestUrl, slug, isPublished = false, publicUrl,
   } = props;
 
   const router = useRouter();
@@ -185,8 +186,15 @@ export function AlbumView(props: AlbumViewProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'latest' | 'contributor'>('latest');
+  
+  // Publish states
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
-  const themeClass = `theme-${(theme || 'Sage').toLowerCase()}`;
+  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
+  const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
+  const themeClass = `theme-${safeTheme.toLowerCase()}`;
   const shotsLeft = photosPerGuest > 0 ? Math.max(0, photosPerGuest - photosUsed) : null;
   const baseVisiblePhotos = role === 'host' ? photos : photos.filter(p => !p.is_hidden);
   const hiddenPhotosCount = photos.filter(p => p.is_hidden).length;
@@ -205,15 +213,44 @@ export function AlbumView(props: AlbumViewProps) {
   const goNext = useCallback(() => setSelectedIndex(i => (i !== null && i < visiblePhotos.length - 1 ? i + 1 : i)), [visiblePhotos.length]);
 
   async function handleToggle(photo: AlbumPhoto) {
-    if (!hostSlug) return;
+    if (!slug) return;
     setTogglingId(photo.id);
     try {
-      await togglePhotoVisibility(photo.id, photo.is_hidden ?? false, hostSlug);
+      await import('@/app/host/[slug]/actions').then(m => m.togglePhotoVisibility(photo.id, photo.is_hidden ?? false, slug));
       setPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, is_hidden: !p.is_hidden } : p));
     } catch {
       // ignore
     } finally {
       setTogglingId(null);
+    }
+  }
+
+  async function handlePublish() {
+    if (!slug) return;
+    setIsPublishing(true);
+    try {
+      const m = await import('@/app/host/[slug]/actions');
+      await m.publishAlbum(slug);
+      router.refresh();
+      setShowPublishModal(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+
+  async function handleUnpublish() {
+    if (!slug) return;
+    setIsPublishing(true);
+    try {
+      const m = await import('@/app/host/[slug]/actions');
+      await m.unpublishAlbum(slug);
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsPublishing(false);
     }
   }
 
@@ -229,6 +266,17 @@ export function AlbumView(props: AlbumViewProps) {
       await navigator.clipboard.writeText(guestUrl);
     }
   }
+  
+  async function copyPublicLink() {
+    if (!publicUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      // ignore
+    }
+  }
 
   return (
     <div className={`min-h-[100dvh] bg-[var(--bg-primary)] ${themeClass}`}>
@@ -242,15 +290,19 @@ export function AlbumView(props: AlbumViewProps) {
           <span className="font-semibold text-sm tracking-tight text-[var(--text-primary)]">AlbumCerita</span>
         </div>
         <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
-            <IconUsers className="h-3.5 w-3.5 text-[var(--theme-primary)]" />
-          </div>
-          <span className="font-medium text-xs text-[var(--text-secondary)]">
-            {role === 'host' ? (hostName?.split('&')[0].trim() || 'Host') : (contributorName || 'Guest')}
-          </span>
-          <span className="text-[var(--text-muted)] text-xs">
-            {role === 'host' ? '· Host' : '· Guest'}
-          </span>
+          {role !== 'public' && (
+            <>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
+                <IconUsers className="h-3.5 w-3.5 text-[var(--theme-primary)]" />
+              </div>
+              <span className="font-medium text-xs text-[var(--text-secondary)]">
+                {role === 'host' ? (hostName?.split('&')[0].trim() || 'Host') : (contributorName || 'Guest')}
+              </span>
+              <span className="text-[var(--text-muted)] text-xs">
+                {role === 'host' ? '· Host' : '· Guest'}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -308,6 +360,33 @@ export function AlbumView(props: AlbumViewProps) {
           )}
         </div>
 
+        {/* ── Publish Notice (Host Only) ── */}
+        {role === 'host' && isPublished && publicUrl && (
+          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
+            <div className="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 mb-3">
+              <span className="h-2 w-2 rounded-full bg-green-500"></span>
+              <span className="text-xs font-semibold text-green-700">Published</span>
+            </div>
+            <p className="text-sm text-gray-500 mb-2">Public Album</p>
+            <p className="font-mono text-sm font-medium text-gray-900 mb-4">{publicUrl}</p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={copyPublicLink}
+                className="flex items-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--theme-secondary)]"
+              >
+                {copiedLink ? 'Copied!' : 'Copy Public Link'}
+              </button>
+              <button
+                onClick={handleUnpublish}
+                disabled={isPublishing}
+                className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {isPublishing ? 'Updating...' : 'Unpublish Album'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── Action buttons / Upload Panel ── */}
         <div className="mt-5">
           {role === 'guest' ? (
@@ -317,7 +396,7 @@ export function AlbumView(props: AlbumViewProps) {
               photosPerGuest={photosPerGuest}
               onUploadComplete={handleUploadComplete}
             />
-          ) : (
+          ) : role === 'host' ? (
             <div className="flex items-center gap-3">
               {/* Host: Share Guest Link */}
               {guestUrl && (
@@ -329,14 +408,16 @@ export function AlbumView(props: AlbumViewProps) {
                   Share Guest Link
                 </button>
               )}
-              <button
-                disabled
-                className="flex flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-tertiary)] px-5 py-3 text-sm font-semibold text-[var(--text-muted)] cursor-not-allowed"
-              >
-                Publish Album (Soon)
-              </button>
+              {!isPublished && (
+                <button
+                  onClick={() => setShowPublishModal(true)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-[var(--theme-primary)] bg-transparent px-5 py-3 text-sm font-semibold text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/5"
+                >
+                  Publish Album
+                </button>
+              )}
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* ── Captured Moments ── */}
@@ -437,6 +518,36 @@ export function AlbumView(props: AlbumViewProps) {
           hasPrev={selectedIndex > 0}
           hasNext={selectedIndex < visiblePhotos.length - 1}
         />
+      )}
+
+      {/* ── Publish Confirmation Modal ── */}
+      {showPublishModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Publish Album?</h3>
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              Only visible photos will appear in the public gallery.
+              <br/><br/>
+              Guests will no longer need a PIN to view the published memories.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPublishModal(false)}
+                disabled={isPublishing}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className="flex-1 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--theme-secondary)] disabled:opacity-50"
+              >
+                {isPublishing ? 'Publishing...' : 'Publish Album'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

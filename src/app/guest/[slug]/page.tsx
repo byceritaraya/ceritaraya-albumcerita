@@ -1,16 +1,17 @@
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
+import Link from 'next/link';
 import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
 import { GuestAuth } from './guest-auth';
 import { GuestWelcome } from './guest-welcome';
 
 interface PageProps {
-  params: Promise<{ guest_slug: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 export default async function GuestPage({ params }: PageProps) {
-  const { guest_slug } = await params;
+  const { slug } = await params;
 
   const cookieStore = await cookies();
   const contributorId = cookieStore.get('contributor_id')?.value;
@@ -19,15 +20,15 @@ export default async function GuestPage({ params }: PageProps) {
 
   const { data: event, error } = await supabase
     .from('events')
-    .select('id, event_id, name, event_type, photos_per_guest, theme, cover_image_url, host_name, expires_at')
-    .eq('guest_slug', guest_slug)
+    .select('id, event_id, name, event_type, photos_per_guest, theme, cover_image_url, host_name, expires_at, is_published')
+    .eq('slug', slug)
     .single();
 
   if (error || !event) notFound();
 
   // No contributor session → show PIN / Name auth
   if (!contributorId) {
-    return <GuestAuth guestSlug={guest_slug} />;
+    return <GuestAuth slug={slug} />;
   }
 
   const { data: contributor } = await supabase
@@ -38,7 +39,36 @@ export default async function GuestPage({ params }: PageProps) {
 
   // Contributor session belongs to a different event → re-auth
   if (!contributor || contributor.event_id !== event.id) {
-    return <GuestAuth guestSlug={guest_slug} initialStep="name" />;
+    return <GuestAuth slug={slug} initialStep="name" />;
+  }
+
+  // If published, event is closed for new contributions
+  if (event.is_published) {
+    return (
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[var(--bg-primary)] px-6 py-12 text-center">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm border border-gray-100">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-green-600">
+              <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h1 className="font-heading text-2xl text-[var(--text-primary)] mb-3">
+            Album Published
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">
+            This album has been published and is now closed for new contributions.
+            <br/><br/>
+            Thank you for being part of this story.
+          </p>
+          <Link
+            href={`/album/${slug}`}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--theme-secondary)]"
+          >
+            View Published Album
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   // ── Data fetching ──────────────────────────────────────────────────────────

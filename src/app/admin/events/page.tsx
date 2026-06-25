@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/service';
+import { EventRow } from './event-row';
 
 type EventState = 'draft' | 'published' | 'expired' | 'archived';
 
@@ -18,13 +19,6 @@ const STATE_STYLES: Record<EventState, string> = {
   archived: 'bg-gray-100 text-gray-600 border border-gray-200',
 };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
 
 export default async function AdminEventsPage() {
   const supabase = createServiceClient();
@@ -78,36 +72,16 @@ export default async function AdminEventsPage() {
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">Event ID</th>
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">State</th>
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">Created</th>
+                <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {(events as Event[]).map((event) => (
-                <tr
-                  key={event.id}
-                  className="hover:bg-gray-50 transition-colors duration-100 group"
-                >
-                  <td className="px-5 py-4 font-medium text-gray-900">
-                    <Link
-                      href={`/admin/events/${event.event_id}`}
-                      className="hover:text-blue-600 transition-colors"
-                    >
-                      {event.name}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-4 font-mono text-xs text-gray-500">
-                    {event.event_id}
-                  </td>
-                  <td className="px-5 py-4">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATE_STYLES[event.state] ?? 'bg-gray-100 text-gray-600'}`}
-                    >
-                      {event.state}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 text-gray-500">
-                    {formatDate(event.created_at)}
-                  </td>
-                </tr>
+                <EventRow 
+                  key={event.id} 
+                  event={event} 
+                  stateStyles={STATE_STYLES} 
+                />
               ))}
             </tbody>
           </table>

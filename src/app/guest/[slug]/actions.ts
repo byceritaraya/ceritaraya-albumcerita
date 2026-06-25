@@ -14,12 +14,12 @@ export async function authenticateGuest(
   _prevState: GuestAuthResult,
   formData: FormData
 ): Promise<GuestAuthResult> {
-  const guestSlug = formData.get('guest_slug') as string;
+  const slug = formData.get('slug') as string;
   const step = formData.get('step') as string;
   const pin = formData.get('pin') as string;
   const displayName = formData.get('display_name') as string;
 
-  if (!guestSlug || !pin) {
+  if (!slug || !pin) {
     return { error: 'Slug and PIN are required', step: 'pin' };
   }
 
@@ -27,7 +27,7 @@ export async function authenticateGuest(
   const { data: event, error } = await supabase
     .from('events')
     .select('id, guest_pin_hash')
-    .eq('guest_slug', guestSlug)
+    .eq('slug', slug)
     .single();
 
   if (error || !event || !event.guest_pin_hash) {
@@ -77,7 +77,7 @@ export async function authenticateGuest(
       maxAge: 60 * 60 * 24 * 30,
     });
 
-    redirect(`/guest/${guestSlug}`);
+    redirect(`/guest/${slug}`);
   }
 
   return { error: 'Invalid step' };

@@ -90,7 +90,7 @@ export default function NewEventPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Create Event</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Fill in the details below. An Event ID, PIN, and slug will be generated automatically.
+          Fill in the details below. A human-readable slug, Event ID, and PINs will be generated automatically.
         </p>
       </div>
 
@@ -123,6 +123,21 @@ export default function NewEventPage() {
               placeholder="e.g. Pernikahan Budi & Ani"
               className={inputClass}
             />
+          </Field>
+
+          {/* Event Date — required for slug generation (ddMMyy suffix) */}
+          <Field label="Event Date" htmlFor="event_date">
+            <input
+              id="event_date"
+              name="event_date"
+              type="date"
+              required
+              className={inputClass}
+            />
+            <p className="text-xs text-gray-400">
+              Used to generate the event slug, e.g.{' '}
+              <span className="font-mono">budi-ari-wedding-250226</span>
+            </p>
           </Field>
 
           {/* Host Name */}
@@ -160,10 +175,11 @@ export default function NewEventPage() {
               className={selectClass}
             >
               <option value="Sage">Sage</option>
-              <option value="Ocean">Ocean</option>
-              <option value="Terracotta">Terracotta</option>
               <option value="Blush">Blush</option>
-              <option value="Charcoal">Charcoal</option>
+              <option value="Slate">Slate</option>
+              <option value="Sand">Sand</option>
+              <option value="Mauve">Mauve</option>
+              <option value="Ivory">Ivory</option>
             </select>
           </Field>
 

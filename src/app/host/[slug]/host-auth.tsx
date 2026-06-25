@@ -17,7 +17,7 @@ function SubmitButton() {
   );
 }
 
-export function HostAuth({ hostSlug }: { hostSlug: string }) {
+export function HostAuth({ slug }: { slug: string }) {
   const [state, formAction] = useActionState(authenticateHost, {});
 
   return (
@@ -31,7 +31,7 @@ export function HostAuth({ hostSlug }: { hostSlug: string }) {
         </div>
 
         <form action={formAction} className="flex flex-col gap-5">
-          <input type="hidden" name="host_slug" value={hostSlug} />
+          <input type="hidden" name="slug" value={slug} />
           
           {state?.error && (
             <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-100">

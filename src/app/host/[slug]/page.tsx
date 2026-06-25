@@ -5,39 +5,60 @@ import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
 import { HostAuth } from './host-auth';
 
 interface PageProps {
-  params: Promise<{ host_slug: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 export default async function HostPage({ params }: PageProps) {
-  const { host_slug } = await params;
+  const { slug } = await params;
 
   const supabase = createServiceClient();
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, event_id, name, host_name, event_type, expires_at, cover_image_url, theme, guest_slug, guest_pin')
-    .eq('host_slug', host_slug)
+    .select('id, event_id, name, host_name, event_type, expires_at, cover_image_url, theme, is_published, guest_pin')
+    .eq('slug', slug)
     .single();
 
-  if (eventError || !event) notFound();
+  if (eventError && eventError.code !== 'PGRST116') {
+    console.error('Event lookup error:', eventError);
+    throw new Error(eventError.message);
+  }
+
+  if (!event) {
+    console.log('Host slug param:', slug);
+    console.log('Event lookup result:', event);
+    console.log('Event lookup error:', eventError);
+    notFound();
+  }
 
   // ── Session check ──────────────────────────────────────────────────────────
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get(`host_session_${host_slug}`)?.value;
+  const cookieKey = `host_session_${slug}`;
+  const sessionToken = cookieStore.get(cookieKey)?.value;
+
+  console.log('--- HOST AUTH DEBUG ---');
+  console.log('Host slug:', slug);
+  console.log('Cookie key:', cookieKey);
+  console.log('Session cookie found:', sessionToken ? '[REDACTED]' : null);
 
   let isAuthenticated = false;
   if (sessionToken) {
-    const { data: session } = await supabase
+    const { data: session, error: sessionLookupError } = await supabase
       .from('client_sessions')
       .select('id')
       .eq('session_token', sessionToken)
       .eq('event_id', event.id)
       .single();
-    if (session) isAuthenticated = true;
+    if (session) {
+      isAuthenticated = true;
+      console.log('Session valid in DB:', session.id);
+    } else {
+      console.log('Session INVALID in DB. Error:', sessionLookupError);
+    }
   }
 
   if (!isAuthenticated) {
-    return <HostAuth hostSlug={host_slug} />;
+    return <HostAuth slug={slug} />;
   }
 
   // ── Data fetching ──────────────────────────────────────────────────────────
@@ -86,14 +107,17 @@ export default async function HostPage({ params }: PageProps) {
     if (data) finalCoverUrl = data.signedUrl;
   }
 
-  // ── Build guest URL ────────────────────────────────────────────────────────
+  // ── Build URLs ────────────────────────────────────────────────────────
   const headersList = await headers();
   const hostHeader = headersList.get('host') || 'localhost:3000';
   const protocol = hostHeader.includes('localhost') ? 'http' : 'https';
-  let guestUrl = event.guest_slug ? `${protocol}://${hostHeader}/guest/${event.guest_slug}` : undefined;
-  if (guestUrl && event.guest_pin) {
+  
+  let guestUrl = `${protocol}://${hostHeader}/guest/${slug}`;
+  if (event.guest_pin) {
     guestUrl += `?pin=${event.guest_pin}`;
   }
+  
+  const publicUrl = `${protocol}://${hostHeader}/album/${slug}`;
 
   return (
     <AlbumView
@@ -107,7 +131,9 @@ export default async function HostPage({ params }: PageProps) {
       totalPhotos={totalPhotos ?? 0}
       totalContributors={totalContributors ?? 0}
       guestUrl={guestUrl}
-      hostSlug={host_slug}
+      slug={slug}
+      isPublished={event.is_published}
+      publicUrl={publicUrl}
     />
   );
 }

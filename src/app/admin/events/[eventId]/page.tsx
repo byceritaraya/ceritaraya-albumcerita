@@ -74,15 +74,13 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
 
   const supabase = createServiceClient();
 
-  const { data: event, error } = await supabase
+  const { data: e, error } = await supabase
     .from('events')
-    .select(
-      'id, event_id, name, state, created_at, retention_months, max_contributors, photos_per_guest, host_slug, guest_slug, host_name, theme, cover_image_url'
-    )
+    .select('event_id, name, state, event_type, retention_months, max_contributors, photos_per_guest, slug, host_name, theme, created_at, expires_at, is_published, cover_image_url')
     .eq('event_id', eventId)
     .single();
 
-  if (error?.code === 'PGRST116' || (!error && !event)) {
+  if (error?.code === 'PGRST116' || (!error && !e)) {
     notFound();
   }
 
@@ -95,8 +93,6 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
       </div>
     );
   }
-
-  const e = event as Event;
 
   let finalCoverUrl = e.cover_image_url ?? null;
   if (finalCoverUrl && !finalCoverUrl.startsWith('http')) {
@@ -128,39 +124,63 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
         </div>
         <div className="ml-auto flex items-center gap-3">
           <span
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium capitalize ${STATE_STYLES[e.state] ?? 'bg-gray-100 text-gray-600'}`}
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium capitalize ${STATE_STYLES[e.state as keyof typeof STATE_STYLES] ?? 'bg-gray-100 text-gray-600'}`}
           >
-            {e.state}
+            {e.state as string}
           </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-8">
         {/* Guest & Host Access Sections */}
-        {(e.host_slug || e.guest_slug) && (
+        {e.slug && (
           <div className="space-y-4">
-            {e.guest_slug && (
-              <AccessCard 
-                eventId={e.event_id}
-                title="Guest Access" 
-                type="guest"
-                slug={e.guest_slug} 
-                pin={flashData?.guestPin} 
-                baseUrl={baseUrl} 
-              />
-            )}
-            {e.host_slug && (
-              <AccessCard 
-                eventId={e.event_id}
-                title="Host Access" 
-                type="host"
-                slug={e.host_slug} 
-                pin={flashData?.hostPin} 
-                baseUrl={baseUrl} 
-              />
-            )}
+            <AccessCard 
+              eventId={e.event_id}
+              title="Guest Access" 
+              type="guest"
+              slug={e.slug} 
+              pin={flashData?.guestPin} 
+              baseUrl={baseUrl} 
+            />
+            <AccessCard 
+              eventId={e.event_id}
+              title="Host Access" 
+              type="host"
+              slug={e.slug} 
+              pin={flashData?.hostPin} 
+              baseUrl={baseUrl} 
+            />
           </div>
         )}
+
+        {/* Publish Status */}
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+            Album Status
+          </h2>
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`h-2.5 w-2.5 rounded-full ${e.is_published ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+            <span className="font-semibold text-gray-900">{e.is_published ? 'Published' : 'Draft'}</span>
+          </div>
+          {e.is_published ? (
+            <div className="mt-3">
+              <p className="text-xs text-gray-500 mb-1">Public Album Link</p>
+              <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                <span className="text-sm font-mono text-gray-800 break-all mr-3">
+                  {baseUrl}/album/{e.slug}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                The album is currently visible to the public. Only the Host can publish or unpublish albums.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 mt-1">
+              This album is only visible to the Host and Guests with a PIN. The Host can publish it from their dashboard.
+            </p>
+          )}
+        </div>
 
         {/* Edit Event Form */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -195,8 +215,8 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
             <FieldRow
               label="State"
               value={
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATE_STYLES[e.state] ?? 'bg-gray-100 text-gray-600'}`}>
-                  {e.state}
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATE_STYLES[e.state as keyof typeof STATE_STYLES] ?? 'bg-gray-100 text-gray-600'}`}>
+                  {e.state as string}
                 </span>
               }
             />
