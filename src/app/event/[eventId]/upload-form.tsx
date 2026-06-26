@@ -306,7 +306,15 @@ export function UploadForm({
             ? `${successCount} uploaded, ${failCount} failed. Retry the failed shots below.`
             : `${successCount} moment${successCount !== 1 ? 's' : ''} shared! ✨`,
       });
-      onUploadComplete();
+      
+      if (failCount === 0) {
+        setTimeout(() => {
+          setGlobalMessage(null);
+          onUploadComplete();
+        }, 1500);
+      } else {
+        onUploadComplete();
+      }
     } else if (failCount > 0) {
       setGlobalMessage({ type: 'error', text: 'All uploads failed. Tap to retry.' });
     }
