@@ -179,3 +179,31 @@ export async function unpublishAlbum(slug: string): Promise<{ error?: string }> 
     return { error: (e as Error).message };
   }
 }
+
+// ── Bulk Photo Visibility ─────────────────────────────────────────────────────
+
+export async function bulkHidePhotos(photoIds: string[], slug: string) {
+  if (!photoIds || photoIds.length === 0) return;
+  const { supabase, eventId } = await verifyHostSession(slug);
+
+  const { error } = await supabase
+    .from('photos')
+    .update({ is_hidden: true })
+    .in('id', photoIds)
+    .eq('event_id', eventId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function bulkUnhidePhotos(photoIds: string[], slug: string) {
+  if (!photoIds || photoIds.length === 0) return;
+  const { supabase, eventId } = await verifyHostSession(slug);
+
+  const { error } = await supabase
+    .from('photos')
+    .update({ is_hidden: false })
+    .in('id', photoIds)
+    .eq('event_id', eventId);
+
+  if (error) throw new Error(error.message);
+}

@@ -12,6 +12,7 @@ export interface AlbumPhoto {
   storage_path: string;
   uploaded_at: string;
   guest_name: string;
+  guest_token?: string;
   is_hidden?: boolean;
 }
 
@@ -29,6 +30,7 @@ export interface AlbumViewProps {
   contributorName?: string;
   photosUsed?: number;
   photosPerGuest?: number;
+  currentContributorToken?: string;
   // Host-only
   guestUrl?: string;
   slug?: string;
@@ -98,8 +100,16 @@ function IconEye({ className }: { className?: string }) {
 
 function IconEyeOff({ className }: { className?: string }) {
   return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+    </svg>
+  );
+}
+
+function IconTrash({ className }: { className?: string }) {
+  return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M3.53 2.47a.75.75 0 0 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-18-18ZM22.676 12.553a11.249 11.249 0 0 1-2.631 4.31l-3.099-3.099a5.25 5.25 0 0 0-6.71-6.71L7.759 4.577A11.217 11.217 0 0 1 12 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113ZM15.75 12c0 .068-.006.135-.018.2l-3.482-3.481A3.75 3.75 0 0 1 15.75 12ZM21.25 17.25l-2.493-2.493a11.249 11.249 0 0 1-2.517 2.049l-1.06-1.06a9.753 9.753 0 0 0 2.234-1.783l-3.099-3.099a5.25 5.25 0 0 0-6.71-6.71L4.129 1.24a11.217 11.217 0 0 0-2.804 1.987L.47 1.72a.75.75 0 0 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-1.22-1.22Z" />
+      <path fillRule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-.355 5.945a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.346-9Zm5.48.058a.75.75 0 1 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z" clipRule="evenodd" />
     </svg>
   );
 }
@@ -187,6 +197,19 @@ export function AlbumView(props: AlbumViewProps) {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'latest' | 'contributor'>('latest');
   
+  // Bulk selection states
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set());
+  
+  // Deletion states
+  const [photoToDelete, setPhotoToDelete] = useState<AlbumPhoto | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [localPhotosUsed, setLocalPhotosUsed] = useState(photosUsed);
+
+  useEffect(() => {
+    setLocalPhotosUsed(photosUsed);
+  }, [photosUsed]);
+  
   // Publish states
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -195,7 +218,7 @@ export function AlbumView(props: AlbumViewProps) {
   const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
   const themeClass = `theme-${safeTheme.toLowerCase()}`;
-  const shotsLeft = photosPerGuest > 0 ? Math.max(0, photosPerGuest - photosUsed) : null;
+  const shotsLeft = photosPerGuest > 0 ? Math.max(0, photosPerGuest - localPhotosUsed) : null;
   const baseVisiblePhotos = role === 'host' ? photos : photos.filter(p => !p.is_hidden);
   const hiddenPhotosCount = photos.filter(p => p.is_hidden).length;
   
@@ -211,6 +234,77 @@ export function AlbumView(props: AlbumViewProps) {
   const closeModal = useCallback(() => setSelectedIndex(null), []);
   const goPrev = useCallback(() => setSelectedIndex(i => (i !== null && i > 0 ? i - 1 : i)), []);
   const goNext = useCallback(() => setSelectedIndex(i => (i !== null && i < visiblePhotos.length - 1 ? i + 1 : i)), [visiblePhotos.length]);
+
+  const myPhotos = role === 'guest' ? [...baseVisiblePhotos].filter(p => p.guest_token === props.currentContributorToken).sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()) : [];
+  const otherPhotos = role === 'guest' ? [...baseVisiblePhotos].filter(p => p.guest_token !== props.currentContributorToken).sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()) : [];
+
+  function toggleSelection(id: string) {
+    const next = new Set(selectedPhotoIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedPhotoIds(next);
+  }
+
+  function clearSelection() {
+    setSelectedPhotoIds(new Set());
+    setIsSelectMode(false);
+  }
+
+  async function handleBulkHide() {
+    if (!slug) return;
+    const ids = Array.from(selectedPhotoIds);
+    try {
+      await import('@/app/host/[slug]/actions').then(m => m.bulkHidePhotos(ids, slug));
+      setPhotos(prev => prev.map(p => ids.includes(p.id) ? { ...p, is_hidden: true } : p));
+      clearSelection();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function handleBulkUnhide() {
+    if (!slug) return;
+    const ids = Array.from(selectedPhotoIds);
+    try {
+      await import('@/app/host/[slug]/actions').then(m => m.bulkUnhidePhotos(ids, slug));
+      setPhotos(prev => prev.map(p => ids.includes(p.id) ? { ...p, is_hidden: false } : p));
+      clearSelection();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!slug || !photoToDelete) return;
+    setIsDeleting(true);
+    try {
+      await import('@/app/guest/[slug]/actions').then(m => m.deletePhoto(photoToDelete.id, slug));
+      setPhotos(prev => prev.filter(p => p.id !== photoToDelete.id));
+      setLocalPhotosUsed(prev => Math.max(0, prev - 1));
+      setPhotoToDelete(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  const groupedPhotos = sortBy === 'contributor'
+    ? visiblePhotos.reduce((acc, photo) => {
+        if (!acc[photo.guest_name]) acc[photo.guest_name] = [];
+        acc[photo.guest_name].push(photo);
+        return acc;
+      }, {} as Record<string, AlbumPhoto[]>)
+    : null;
+
+  const sortedGroups = groupedPhotos
+    ? Object.entries(groupedPhotos).sort((a, b) => {
+        const aLatest = Math.max(...a[1].map(p => new Date(p.uploaded_at).getTime()));
+        const bLatest = Math.max(...b[1].map(p => new Date(p.uploaded_at).getTime()));
+        return bLatest - aLatest;
+      })
+    : null;
+
 
   async function handleToggle(photo: AlbumPhoto) {
     if (!slug) return;
@@ -397,24 +491,28 @@ export function AlbumView(props: AlbumViewProps) {
               onUploadComplete={handleUploadComplete}
             />
           ) : role === 'host' ? (
-            <div className="flex items-center gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {/* Host: Share Guest Link */}
-              {guestUrl && (
+              {guestUrl ? (
                 <button
                   onClick={shareGuestLink}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] active:scale-[0.97]"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] active:scale-[0.97]"
                 >
                   <IconShare className="h-4 w-4" />
                   Share Guest Link
                 </button>
+              ) : (
+                <div />
               )}
-              {!isPublished && (
+              {!isPublished ? (
                 <button
                   onClick={() => setShowPublishModal(true)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-[var(--theme-primary)] bg-transparent px-5 py-3 text-sm font-semibold text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/5"
+                  className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-[var(--theme-primary)] bg-transparent px-5 py-3 text-sm font-semibold text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/5"
                 >
                   Publish Album
                 </button>
+              ) : (
+                <div />
               )}
             </div>
           ) : null}
@@ -425,15 +523,26 @@ export function AlbumView(props: AlbumViewProps) {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-xl text-[var(--text-primary)]">Captured Moments</h2>
             {role === 'host' && visiblePhotos.length > 0 && (
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'latest' | 'contributor')}
-                className="text-xs text-[var(--text-secondary)] font-medium bg-transparent outline-none focus:ring-0 border-none cursor-pointer py-1 pl-2 pr-6 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors"
-                style={{ WebkitAppearance: 'none' }}
-              >
-                <option value="latest">Sort by Latest</option>
-                <option value="contributor">Sort by Contributor</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'latest' | 'contributor')}
+                  className="text-xs text-[var(--text-secondary)] font-medium bg-transparent outline-none focus:ring-0 border-none cursor-pointer py-1 pl-2 pr-6 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors"
+                  style={{ WebkitAppearance: 'none' }}
+                >
+                  <option value="latest">Sort by Latest</option>
+                  <option value="contributor">Sort by Contributor</option>
+                </select>
+                <button
+                  onClick={() => {
+                    if (isSelectMode) clearSelection();
+                    else setIsSelectMode(true);
+                  }}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${isSelectMode ? 'bg-[var(--theme-primary)] text-white' : 'bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/20'}`}
+                >
+                  {isSelectMode ? 'Cancel' : 'Select'}
+                </button>
+              </div>
             )}
           </div>
 
@@ -446,20 +555,32 @@ export function AlbumView(props: AlbumViewProps) {
             </div>
           )}
 
-          {/* Photo grid */}
+          {/* Photo grid or Groups */}
           {visiblePhotos.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
-              {visiblePhotos.map((photo, index) => (
+            <>
+              {role === 'guest' ? (
+                <div className="space-y-8">
+                  {myPhotos.length > 0 && (
+                    <div>
+                      <h3 className="font-heading text-lg text-[var(--text-primary)] mb-3">Your Captured Moments</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {myPhotos.map((photo) => {
+                          const index = visiblePhotos.findIndex(p => p.id === photo.id);
+                          return (
+                            
                 <div key={photo.id} className="relative aspect-square group">
                   <button
-                    onClick={() => openModal(index)}
-                    className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''}`}
+                    onClick={() => {
+                      if (isSelectMode) toggleSelection(photo.id);
+                      else openModal(index);
+                    }}
+                    className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={photo.original_url}
                       alt={`Photo by ${photo.guest_name}`}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
                       loading="lazy"
                     />
                     {/* "Taken by" label */}
@@ -473,8 +594,21 @@ export function AlbumView(props: AlbumViewProps) {
                     </div>
                   </button>
 
-                  {/* Host-only: Hide/Show toggle */}
-                  {role === 'host' && (
+                  {/* Checkbox for Select Mode */}
+                  {isSelectMode && (
+                    <div className="absolute top-2 left-2 pointer-events-none">
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${selectedPhotoIds.has(photo.id) ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]' : 'border-white/80 bg-black/20'}`}>
+                        {selectedPhotoIds.has(photo.id) && (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Host-only: Hide/Show toggle (hidden in select mode) */}
+                  {(role as string) === 'host' && !isSelectMode && (
                     <button
                       onClick={() => handleToggle(photo)}
                       disabled={togglingId === photo.id}
@@ -493,9 +627,286 @@ export function AlbumView(props: AlbumViewProps) {
                       )}
                     </button>
                   )}
+
+                  {/* Guest-only: Delete own photo */}
+                  {(role as string) === 'guest' && !isPublished && photo.guest_token === props.currentContributorToken && (
+                    <button
+                      onClick={() => setPhotoToDelete(photo)}
+                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+                      title="Delete photo"
+                    >
+                      <IconTrash className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-              ))}
-            </div>
+
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {otherPhotos.length > 0 && (
+                    <div>
+                      <h3 className="font-heading text-lg text-[var(--text-primary)] mb-3">Other Captured Moments</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {otherPhotos.map((photo) => {
+                          const index = visiblePhotos.findIndex(p => p.id === photo.id);
+                          return (
+                            
+                <div key={photo.id} className="relative aspect-square group">
+                  <button
+                    onClick={() => {
+                      if (isSelectMode) toggleSelection(photo.id);
+                      else openModal(index);
+                    }}
+                    className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo.original_url}
+                      alt={`Photo by ${photo.guest_name}`}
+                      className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+                      loading="lazy"
+                    />
+                    {/* "Taken by" label */}
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
+                          <IconUsers className="h-2.5 w-2.5 text-white" />
+                        </div>
+                        <p className="text-[10px] font-medium text-white truncate">Taken by {photo.guest_name}</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Checkbox for Select Mode */}
+                  {isSelectMode && (
+                    <div className="absolute top-2 left-2 pointer-events-none">
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${selectedPhotoIds.has(photo.id) ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]' : 'border-white/80 bg-black/20'}`}>
+                        {selectedPhotoIds.has(photo.id) && (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Host-only: Hide/Show toggle (hidden in select mode) */}
+                  {(role as string) === 'host' && !isSelectMode && (
+                    <button
+                      onClick={() => handleToggle(photo)}
+                      disabled={togglingId === photo.id}
+                      className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
+                      title={photo.is_hidden ? 'Show photo' : 'Hide photo'}
+                    >
+                      {togglingId === photo.id ? (
+                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                        </svg>
+                      ) : photo.is_hidden ? (
+                        <IconEyeOff className="h-3.5 w-3.5" />
+                      ) : (
+                        <IconEye className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
+
+                  {/* Guest-only: Delete own photo */}
+                  {(role as string) === 'guest' && !isPublished && photo.guest_token === props.currentContributorToken && (
+                    <button
+                      onClick={() => setPhotoToDelete(photo)}
+                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+                      title="Delete photo"
+                    >
+                      <IconTrash className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : sortBy === 'latest' ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {visiblePhotos.map((photo, index) => (
+                    
+                <div key={photo.id} className="relative aspect-square group">
+                  <button
+                    onClick={() => {
+                      if (isSelectMode) toggleSelection(photo.id);
+                      else openModal(index);
+                    }}
+                    className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo.original_url}
+                      alt={`Photo by ${photo.guest_name}`}
+                      className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+                      loading="lazy"
+                    />
+                    {/* "Taken by" label */}
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
+                          <IconUsers className="h-2.5 w-2.5 text-white" />
+                        </div>
+                        <p className="text-[10px] font-medium text-white truncate">Taken by {photo.guest_name}</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Checkbox for Select Mode */}
+                  {isSelectMode && (
+                    <div className="absolute top-2 left-2 pointer-events-none">
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${selectedPhotoIds.has(photo.id) ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]' : 'border-white/80 bg-black/20'}`}>
+                        {selectedPhotoIds.has(photo.id) && (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Host-only: Hide/Show toggle (hidden in select mode) */}
+                  {(role as string) === 'host' && !isSelectMode && (
+                    <button
+                      onClick={() => handleToggle(photo)}
+                      disabled={togglingId === photo.id}
+                      className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
+                      title={photo.is_hidden ? 'Show photo' : 'Hide photo'}
+                    >
+                      {togglingId === photo.id ? (
+                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                        </svg>
+                      ) : photo.is_hidden ? (
+                        <IconEyeOff className="h-3.5 w-3.5" />
+                      ) : (
+                        <IconEye className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
+
+                  {/* Guest-only: Delete own photo */}
+                  {(role as string) === 'guest' && !isPublished && photo.guest_token === props.currentContributorToken && (
+                    <button
+                      onClick={() => setPhotoToDelete(photo)}
+                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+                      title="Delete photo"
+                    >
+                      <IconTrash className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {sortedGroups?.map(([guestName, groupPhotos]) => (
+                    <div key={guestName} className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-[var(--theme-primary)]">
+                          <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
+                        </svg>
+                        <h3 className="font-heading text-lg text-[var(--text-primary)] leading-none">{guestName}</h3>
+                        <span className="text-xs font-medium bg-[var(--bg-tertiary)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full ml-1">
+                          {groupPhotos.length} {groupPhotos.length === 1 ? 'Moment' : 'Moments'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {groupPhotos.map((photo) => {
+                          const index = visiblePhotos.findIndex(p => p.id === photo.id);
+                          return (
+                            
+                <div key={photo.id} className="relative aspect-square group">
+                  <button
+                    onClick={() => {
+                      if (isSelectMode) toggleSelection(photo.id);
+                      else openModal(index);
+                    }}
+                    className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo.original_url}
+                      alt={`Photo by ${photo.guest_name}`}
+                      className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+                      loading="lazy"
+                    />
+                    {/* "Taken by" label */}
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
+                          <IconUsers className="h-2.5 w-2.5 text-white" />
+                        </div>
+                        <p className="text-[10px] font-medium text-white truncate">Taken by {photo.guest_name}</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Checkbox for Select Mode */}
+                  {isSelectMode && (
+                    <div className="absolute top-2 left-2 pointer-events-none">
+                      <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${selectedPhotoIds.has(photo.id) ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]' : 'border-white/80 bg-black/20'}`}>
+                        {selectedPhotoIds.has(photo.id) && (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Host-only: Hide/Show toggle (hidden in select mode) */}
+                  {(role as string) === 'host' && !isSelectMode && (
+                    <button
+                      onClick={() => handleToggle(photo)}
+                      disabled={togglingId === photo.id}
+                      className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
+                      title={photo.is_hidden ? 'Show photo' : 'Hide photo'}
+                    >
+                      {togglingId === photo.id ? (
+                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                        </svg>
+                      ) : photo.is_hidden ? (
+                        <IconEyeOff className="h-3.5 w-3.5" />
+                      ) : (
+                        <IconEye className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
+
+                  {/* Guest-only: Delete own photo */}
+                  {(role as string) === 'guest' && !isPublished && photo.guest_token === props.currentContributorToken && (
+                    <button
+                      onClick={() => setPhotoToDelete(photo)}
+                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+                      title="Delete photo"
+                    >
+                      <IconTrash className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -519,6 +930,7 @@ export function AlbumView(props: AlbumViewProps) {
           hasNext={selectedIndex < visiblePhotos.length - 1}
         />
       )}
+
 
       {/* ── Publish Confirmation Modal ── */}
       {showPublishModal && (
@@ -546,6 +958,72 @@ export function AlbumView(props: AlbumViewProps) {
                 {isPublishing ? 'Publishing...' : 'Publish Album'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Guest Delete Modal ── */}
+      {photoToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <IconTrash className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete this moment?</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPhotoToDelete(null)}
+                disabled={isDeleting}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Host Moderation Bar ── */}
+      {isSelectMode && selectedPhotoIds.size > 0 && (
+        <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center px-4 animate-in slide-in-from-bottom-10 fade-in duration-300">
+          <div className="flex items-center gap-2 rounded-2xl bg-gray-900/95 p-2 shadow-2xl backdrop-blur-md">
+            <div className="px-3 py-1">
+              <span className="text-sm font-medium text-white">{selectedPhotoIds.size} selected</span>
+            </div>
+            <div className="h-8 w-px bg-white/20 mx-1"></div>
+            <button
+              onClick={handleBulkHide}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors"
+            >
+              <IconEyeOff className="h-4 w-4" />
+              Hide
+            </button>
+            <button
+              onClick={handleBulkUnhide}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors"
+            >
+              <IconEye className="h-4 w-4" />
+              Unhide
+            </button>
+            <button
+              onClick={clearSelection}
+              className="ml-1 rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+              aria-label="Cancel"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
         </div>
       )}

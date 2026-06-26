@@ -26,7 +26,7 @@ export default async function PublicAlbumPage({ params }: PageProps) {
   const [
     { data: rawPhotos },
     { count: totalPhotos },
-    { count: totalContributors },
+    { data: rawContributorTokens },
   ] = await Promise.all([
     supabase
       .from('photos')
@@ -43,11 +43,13 @@ export default async function PublicAlbumPage({ params }: PageProps) {
       .is('deleted_at', null),
     supabase
       .from('photos')
-      .select('guest_token', { count: 'exact', head: true })
+      .select('guest_token')
       .eq('event_id', event.id)
       .eq('is_hidden', false)
       .is('deleted_at', null),
   ]);
+
+  const totalContributors = new Set(rawContributorTokens?.map(r => r.guest_token) ?? []).size;
 
   // ── Signed URLs ────────────────────────────────────────────────────────────
   const photos: AlbumPhoto[] = [];

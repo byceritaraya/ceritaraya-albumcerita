@@ -87,3 +87,42 @@ export async function clearWelcomeModal(contributorId: string) {
   const cookieStore = await cookies();
   cookieStore.delete(`show_welcome_${contributorId}`);
 }
+
+// ── Photo Deletion ──────────────────────────────────────────────────────────
+
+export async function deletePhoto(photoId: string, slug: string) {
+  const cookieStore = await cookies();
+  const contributorId = cookieStore.get('contributor_id')?.value;
+  if (!contributorId) throw new Error('Unauthorized');
+
+  const supabase = createServiceClient();
+
+  // Look up event and verify it's not published
+  const { data: event, error: eventError } = await supabase
+    .from('events')
+    .select('id, is_published')
+    .eq('slug', slug)
+    .single();
+
+  if (eventError || !event) throw new Error('Event not found');
+  if (event.is_published) throw new Error('Cannot delete photos in a published album');
+
+  // Verify photo belongs to this contributor
+  const { data: photo, error: photoError } = await supabase
+    .from('photos')
+    .select('id')
+    .eq('id', photoId)
+    .eq('guest_token', contributorId)
+    .eq('event_id', event.id)
+    .single();
+
+  if (photoError || !photo) throw new Error('Photo not found or unauthorized');
+
+  // Soft delete
+  const { error } = await supabase
+    .from('photos')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', photoId);
+
+  if (error) throw new Error(error.message);
+}

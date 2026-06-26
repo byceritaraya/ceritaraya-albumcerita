@@ -76,31 +76,37 @@ export default async function GuestPage({ params }: PageProps) {
     { count: photosUsed },
     { data: rawPhotos },
     { count: totalPhotos },
-    { count: totalContributors },
+    { data: rawContributorTokens },
   ] = await Promise.all([
     supabase
       .from('photos')
       .select('id', { count: 'exact', head: true })
       .eq('event_id', event.id)
-      .eq('guest_token', contributorId),
+      .eq('guest_token', contributorId)
+      .is('deleted_at', null),
     supabase
       .from('photos')
-      .select('id, original_url, storage_path, uploaded_at, guest_name')
+      .select('id, original_url, storage_path, uploaded_at, guest_name, guest_token')
       .eq('event_id', event.id)
       .eq('is_hidden', false)
+      .is('deleted_at', null)
       .order('uploaded_at', { ascending: false })
       .limit(24),
     supabase
       .from('photos')
       .select('id', { count: 'exact', head: true })
       .eq('event_id', event.id)
-      .eq('is_hidden', false),
+      .eq('is_hidden', false)
+      .is('deleted_at', null),
     supabase
       .from('photos')
-      .select('guest_token', { count: 'exact', head: true })
+      .select('guest_token')
       .eq('event_id', event.id)
-      .eq('is_hidden', false),
+      .eq('is_hidden', false)
+      .is('deleted_at', null),
   ]);
+
+  const totalContributors = new Set(rawContributorTokens?.map(r => r.guest_token) ?? []).size;
 
   // ── Signed URLs ────────────────────────────────────────────────────────────
   const photos: AlbumPhoto[] = [];
@@ -146,6 +152,7 @@ export default async function GuestPage({ params }: PageProps) {
         contributorName={contributor.display_name}
         photosUsed={photosUsed ?? 0}
         photosPerGuest={event.photos_per_guest}
+        currentContributorToken={contributorId}
       />
     </>
   );
