@@ -57,8 +57,21 @@ export default async function HostPage({ params }: PageProps) {
     }
   }
 
+  let finalCoverUrl: string | undefined = undefined;
+  const rawCover = event.cover_image_url;
+  if (rawCover) {
+    if (rawCover.startsWith('http')) {
+      finalCoverUrl = rawCover;
+    } else {
+      const { data: signedData } = await supabase.storage
+        .from('albumcerita_photos')
+        .createSignedUrl(rawCover, 3600);
+      if (signedData?.signedUrl) finalCoverUrl = signedData.signedUrl;
+    }
+  }
+
   if (!isAuthenticated) {
-    return <HostAuth slug={slug} />;
+    return <HostAuth slug={slug} eventName={event.name} hostName={event.host_name ?? undefined} theme={event.theme ?? undefined} coverImageUrl={finalCoverUrl} />;
   }
 
   // ── Data fetching ──────────────────────────────────────────────────────────
@@ -101,11 +114,7 @@ export default async function HostPage({ params }: PageProps) {
     }
   }
 
-  let finalCoverUrl = event.cover_image_url ?? undefined;
-  if (finalCoverUrl && !finalCoverUrl.startsWith('http')) {
-    const { data } = await supabase.storage.from('albumcerita_photos').createSignedUrl(finalCoverUrl, 3600);
-    if (data) finalCoverUrl = data.signedUrl;
-  }
+
 
   // ── Build URLs ────────────────────────────────────────────────────────
   const headersList = await headers();

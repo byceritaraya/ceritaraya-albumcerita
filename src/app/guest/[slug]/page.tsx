@@ -26,9 +26,25 @@ export default async function GuestPage({ params }: PageProps) {
 
   if (error || !event) notFound();
 
+  let finalCoverUrl: string | undefined = undefined;
+  const rawCover = event.cover_image_url;
+  if (rawCover) {
+    if (rawCover.startsWith('http')) {
+      // Already a full URL (legacy or public bucket)
+      finalCoverUrl = rawCover;
+    } else {
+      // Storage path → generate signed URL
+      const { data: signedData } = await supabase.storage
+        .from('albumcerita_photos')
+        .createSignedUrl(rawCover, 3600);
+      if (signedData?.signedUrl) finalCoverUrl = signedData.signedUrl;
+      // If signing fails, finalCoverUrl stays undefined → fallback gradient shown
+    }
+  }
+
   // No contributor session → show PIN / Name auth
   if (!contributorId) {
-    return <GuestAuth slug={slug} />;
+    return <GuestAuth slug={slug} eventName={event.name} hostName={event.host_name ?? undefined} theme={event.theme ?? undefined} coverImageUrl={finalCoverUrl} />;
   }
 
   const { data: contributor } = await supabase
@@ -39,16 +55,16 @@ export default async function GuestPage({ params }: PageProps) {
 
   // Contributor session belongs to a different event → re-auth
   if (!contributor || contributor.event_id !== event.id) {
-    return <GuestAuth slug={slug} initialStep="name" />;
+    return <GuestAuth slug={slug} initialStep="name" eventName={event.name} hostName={event.host_name ?? undefined} theme={event.theme ?? undefined} coverImageUrl={finalCoverUrl} />;
   }
 
   // If published, event is closed for new contributions
   if (event.is_published) {
     return (
       <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[var(--bg-primary)] px-6 py-12 text-center">
-        <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm border border-gray-100">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-green-600">
+        <div className="w-full max-w-sm rounded-2xl bg-[var(--bg-primary)] p-8 shadow-sm border border-[var(--bg-tertiary)]">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-[var(--theme-primary)]">
               <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
             </svg>
           </div>
@@ -121,11 +137,7 @@ export default async function GuestPage({ params }: PageProps) {
     }
   }
 
-  let finalCoverUrl = event.cover_image_url ?? undefined;
-  if (finalCoverUrl && !finalCoverUrl.startsWith('http')) {
-    const { data } = await supabase.storage.from('albumcerita_photos').createSignedUrl(finalCoverUrl, 3600);
-    if (data) finalCoverUrl = data.signedUrl;
-  }
+
 
   const showWelcome = cookieStore.has(`show_welcome_${contributorId}`);
 
@@ -136,7 +148,8 @@ export default async function GuestPage({ params }: PageProps) {
           contributorId={contributorId}
           contributorName={contributor.display_name}
           eventName={event.name}
-          hostName={event.host_name ? event.host_name.split('&')[0].trim() : 'the host'}
+          hostName={event.host_name ?? 'the host'}
+          theme={event.theme ?? undefined}
         />
       )}
       <AlbumView

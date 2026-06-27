@@ -390,7 +390,7 @@ export function AlbumView(props: AlbumViewProps) {
                 <IconUsers className="h-3.5 w-3.5 text-[var(--theme-primary)]" />
               </div>
               <span className="font-medium text-xs text-[var(--text-secondary)]">
-                {role === 'host' ? (hostName?.split('&')[0].trim() || 'Host') : (contributorName || 'Guest')}
+                {role === 'host' ? (hostName || 'Host') : (contributorName || 'Guest')}
               </span>
               <span className="text-[var(--text-muted)] text-xs">
                 {role === 'host' ? '· Host' : '· Guest'}
@@ -401,18 +401,23 @@ export function AlbumView(props: AlbumViewProps) {
       </div>
 
       {/* ── Cover Hero ── */}
-      <div className="relative w-full h-[52dvh] bg-[var(--theme-primary)]/10 overflow-hidden pt-0">
+      <div className="absolute top-0 inset-x-0 h-[60dvh] pointer-events-none">
         {coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverImageUrl} alt="Event Cover" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={coverImageUrl} alt="Event Cover" className="w-full h-full object-cover" />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[var(--theme-primary)] to-[var(--theme-secondary)] opacity-50" />
+          <div className="w-full h-full bg-gradient-to-br from-[var(--theme-primary)] to-[var(--theme-secondary)] opacity-50" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-[var(--theme-primary)]/20 via-transparent to-black/40" />
+        <div 
+          className="absolute inset-0" 
+          style={{
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.20) 40%, rgba(var(--theme-bg-rgb),0.85) 80%, rgba(var(--theme-bg-rgb),1) 100%)'
+          }}
+        />
       </div>
 
       {/* ── Content ── */}
-      <div className="relative bg-[var(--bg-primary)] -mt-4 rounded-t-[24px] px-5 pt-6 pb-12">
+      <div className="relative z-10 px-5 pt-[40dvh] pb-12">
 
         {/* Event title */}
         <h1 className="font-heading text-3xl leading-tight text-[var(--text-primary)]">
@@ -425,7 +430,7 @@ export function AlbumView(props: AlbumViewProps) {
         {role === 'host' && hostName && (
           <div className="mb-6 rounded-xl bg-[var(--theme-primary)]/5 p-5 border border-[var(--theme-primary)]/10">
             <h2 className="text-lg font-heading text-[var(--text-primary)] mb-1">
-              Welcome to your own moments, {hostName.split('&')[0].trim()}.
+              Welcome to your own moments, {hostName}.
             </h2>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
               This is where memories captured by your guests come together. Review, curate, and share the best moments.
@@ -456,13 +461,13 @@ export function AlbumView(props: AlbumViewProps) {
 
         {/* ── Publish Notice (Host Only) ── */}
         {role === 'host' && isPublished && publicUrl && (
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 mb-3">
-              <span className="h-2 w-2 rounded-full bg-green-500"></span>
-              <span className="text-xs font-semibold text-green-700">Published</span>
+          <div className="mt-6 rounded-xl border border-[var(--bg-tertiary)] bg-white/60 backdrop-blur-md p-5 shadow-sm text-center">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[var(--theme-primary)]/10 px-3 py-1 mb-3">
+              <span className="h-2 w-2 rounded-full bg-[var(--theme-primary)]"></span>
+              <span className="text-xs font-semibold text-[var(--theme-primary)]">Published</span>
             </div>
-            <p className="text-sm text-gray-500 mb-2">Public Album</p>
-            <p className="font-mono text-sm font-medium text-gray-900 mb-4">{publicUrl}</p>
+            <p className="text-sm text-[var(--text-secondary)] mb-2">Public Album</p>
+            <p className="font-mono text-sm font-medium text-[var(--text-primary)] mb-4">{publicUrl}</p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={copyPublicLink}
@@ -473,7 +478,7 @@ export function AlbumView(props: AlbumViewProps) {
               <button
                 onClick={handleUnpublish}
                 disabled={isPublishing}
-                className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg border border-[var(--bg-tertiary)] bg-white px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
               >
                 {isPublishing ? 'Updating...' : 'Unpublish Album'}
               </button>
@@ -521,7 +526,9 @@ export function AlbumView(props: AlbumViewProps) {
         {/* ── Captured Moments ── */}
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading text-xl text-[var(--text-primary)]">Captured Moments</h2>
+            {role === 'host' && (
+              <h2 className="font-heading text-xl text-[var(--text-primary)]">Captured Moments</h2>
+            )}
             {role === 'host' && visiblePhotos.length > 0 && (
               <div className="flex items-center gap-2">
                 <select
@@ -565,91 +572,6 @@ export function AlbumView(props: AlbumViewProps) {
                       <h3 className="font-heading text-lg text-[var(--text-primary)] mb-3">Your Captured Moments</h3>
                       <div className="grid grid-cols-2 gap-2">
                         {myPhotos.map((photo) => {
-                          const index = visiblePhotos.findIndex(p => p.id === photo.id);
-                          return (
-                            
-                <div key={photo.id} className="relative aspect-square group">
-                  <button
-                    onClick={() => {
-                      if (isSelectMode) toggleSelection(photo.id);
-                      else openModal(index);
-                    }}
-                    className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.original_url}
-                      alt={`Photo by ${photo.guest_name}`}
-                      className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                      loading="lazy"
-                    />
-                    {/* "Taken by" label */}
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
-                          <IconUsers className="h-2.5 w-2.5 text-white" />
-                        </div>
-                        <p className="text-[10px] font-medium text-white truncate">Taken by {photo.guest_name}</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Checkbox for Select Mode */}
-                  {isSelectMode && (
-                    <div className="absolute top-2 left-2 pointer-events-none">
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${selectedPhotoIds.has(photo.id) ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]' : 'border-white/80 bg-black/20'}`}>
-                        {selectedPhotoIds.has(photo.id) && (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Host-only: Hide/Show toggle (hidden in select mode) */}
-                  {(role as string) === 'host' && !isSelectMode && (
-                    <button
-                      onClick={() => handleToggle(photo)}
-                      disabled={togglingId === photo.id}
-                      className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
-                      title={photo.is_hidden ? 'Show photo' : 'Hide photo'}
-                    >
-                      {togglingId === photo.id ? (
-                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-                        </svg>
-                      ) : photo.is_hidden ? (
-                        <IconEyeOff className="h-3.5 w-3.5" />
-                      ) : (
-                        <IconEye className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  )}
-
-                  {/* Guest-only: Delete own photo */}
-                  {(role as string) === 'guest' && !isPublished && photo.guest_token === props.currentContributorToken && (
-                    <button
-                      onClick={() => setPhotoToDelete(photo)}
-                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                      title="Delete photo"
-                    >
-                      <IconTrash className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  {otherPhotos.length > 0 && (
-                    <div>
-                      <h3 className="font-heading text-lg text-[var(--text-primary)] mb-3">Other Captured Moments</h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        {otherPhotos.map((photo) => {
                           const index = visiblePhotos.findIndex(p => p.id === photo.id);
                           return (
                             
@@ -935,9 +857,9 @@ export function AlbumView(props: AlbumViewProps) {
       {/* ── Publish Confirmation Modal ── */}
       {showPublishModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Publish Album?</h3>
-            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+          <div className="w-full max-w-sm rounded-2xl bg-[var(--bg-primary)] p-6 shadow-xl border border-[var(--bg-tertiary)]">
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Publish Album?</h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">
               Only visible photos will appear in the public gallery.
               <br/><br/>
               Guests will no longer need a PIN to view the published memories.
@@ -946,7 +868,7 @@ export function AlbumView(props: AlbumViewProps) {
               <button
                 onClick={() => setShowPublishModal(false)}
                 disabled={isPublishing}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-[var(--bg-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -965,26 +887,26 @@ export function AlbumView(props: AlbumViewProps) {
       {/* ── Guest Delete Modal ── */}
       {photoToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <IconTrash className="h-6 w-6 text-red-600" />
+          <div className="w-full max-w-sm rounded-2xl bg-[var(--bg-primary)] p-6 shadow-xl text-center border border-[var(--bg-tertiary)]">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
+              <IconTrash className="h-6 w-6 text-[var(--theme-primary)]" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete this moment?</h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Delete this moment?</h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">
               This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setPhotoToDelete(null)}
                 disabled={isDeleting}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-[var(--bg-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--theme-secondary)] disabled:opacity-50"
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
@@ -996,7 +918,7 @@ export function AlbumView(props: AlbumViewProps) {
       {/* ── Host Moderation Bar ── */}
       {isSelectMode && selectedPhotoIds.size > 0 && (
         <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center px-4 animate-in slide-in-from-bottom-10 fade-in duration-300">
-          <div className="flex items-center gap-2 rounded-2xl bg-gray-900/95 p-2 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center gap-2 rounded-2xl bg-[var(--text-primary)] p-2 shadow-2xl backdrop-blur-md">
             <div className="px-3 py-1">
               <span className="text-sm font-medium text-white">{selectedPhotoIds.size} selected</span>
             </div>

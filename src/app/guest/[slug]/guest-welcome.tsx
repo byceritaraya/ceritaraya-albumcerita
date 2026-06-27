@@ -7,12 +7,14 @@ export function GuestWelcome({
   contributorId, 
   contributorName, 
   eventName, 
-  hostName 
+  hostName,
+  theme
 }: { 
   contributorId: string;
   contributorName: string;
   eventName: string;
   hostName: string;
+  theme?: string;
 }) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -33,8 +35,12 @@ export function GuestWelcome({
 
   if (!isOpen) return null;
 
+  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
+  const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
+  const themeClass = `theme-${safeTheme.toLowerCase()}`;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--text-primary)]/80 backdrop-blur-sm p-4">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-[var(--text-primary)]/80 backdrop-blur-sm p-4 ${themeClass}`}>
       <div className="w-full max-w-md bg-[var(--bg-primary)] rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         <h2 className="font-heading text-3xl text-[var(--text-primary)] mb-4 leading-tight">
           Hi, {contributorName} 👋

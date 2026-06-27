@@ -92,7 +92,7 @@ function ShotCard({
   onPreview: (id: string) => void;
 }) {
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-100">
+    <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-[var(--bg-tertiary)]">
       {/* Thumbnail */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -110,15 +110,15 @@ function ShotCard({
       )}
       {shot.status === 'done' && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-          <IconCheck className="h-7 w-7 text-emerald-400" />
+          <IconCheck className="h-7 w-7 text-white" />
         </div>
       )}
       {shot.status === 'error' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-red-900/50">
-          <div className="flex flex-col items-center gap-1 px-2 text-center">
-            <span className="text-xs font-semibold text-red-200">Failed</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+          <div className="text-center p-2">
+            <span className="text-xs font-semibold text-white">Failed</span>
             {shot.errorMsg && (
-              <span className="text-[10px] leading-tight text-red-300 line-clamp-2">{shot.errorMsg}</span>
+              <span className="text-[10px] leading-tight text-white/80 line-clamp-2">{shot.errorMsg}</span>
             )}
           </div>
         </div>
@@ -335,8 +335,8 @@ export function UploadForm({
         <div
           className={`rounded-lg border px-4 py-3 text-sm ${
             globalMessage.type === 'success'
-              ? 'border-green-200 bg-green-50 text-green-700'
-              : 'border-red-200 bg-red-50 text-red-700'
+              ? 'border-[var(--theme-primary)]/20 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]'
+              : 'border-[var(--theme-primary)]/20 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]'
           }`}
         >
           {globalMessage.text}
@@ -347,11 +347,11 @@ export function UploadForm({
       {queue.length > 0 && (
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
               Captured Moments
             </h3>
             {pendingCount > 0 && (
-              <span className="text-xs text-gray-400">{pendingCount} ready to upload</span>
+              <span className="text-xs text-[var(--text-secondary)]">{pendingCount} ready to upload</span>
             )}
           </div>
           <div className="grid grid-cols-3 gap-2">

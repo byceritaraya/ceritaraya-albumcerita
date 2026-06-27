@@ -64,10 +64,17 @@ export default async function PublicAlbumPage({ params }: PageProps) {
     }
   }
 
-  let finalCoverUrl = event.cover_image_url ?? undefined;
-  if (finalCoverUrl && !finalCoverUrl.startsWith('http')) {
-    const { data } = await supabase.storage.from('albumcerita_photos').createSignedUrl(finalCoverUrl, 3600);
-    if (data) finalCoverUrl = data.signedUrl;
+  let finalCoverUrl: string | undefined = undefined;
+  const rawCover = event.cover_image_url;
+  if (rawCover) {
+    if (rawCover.startsWith('http')) {
+      finalCoverUrl = rawCover;
+    } else {
+      const { data: signedData } = await supabase.storage
+        .from('albumcerita_photos')
+        .createSignedUrl(rawCover, 3600);
+      if (signedData?.signedUrl) finalCoverUrl = signedData.signedUrl;
+    }
   }
 
   return (
