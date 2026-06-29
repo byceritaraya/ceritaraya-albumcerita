@@ -70,6 +70,13 @@ export async function authenticateHost(
     maxAge: 60 * 60 * 24 * 30,
   });
 
+  cookieStore.set(`show_host_welcome_${slug}`, '1', {
+    httpOnly: true,
+    sameSite: 'strict',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30,
+  });
+
   console.log('--- HOST AUTH ACTION DEBUG ---');
   console.log('Host slug:', slug);
   console.log('Cookie key set:', cookieKey);
@@ -206,4 +213,9 @@ export async function bulkUnhidePhotos(photoIds: string[], slug: string) {
     .eq('event_id', eventId);
 
   if (error) throw new Error(error.message);
+}
+
+export async function clearHostWelcomeModal(slug: string) {
+  const cookieStore = await cookies();
+  cookieStore.delete(`show_host_welcome_${slug}`);
 }

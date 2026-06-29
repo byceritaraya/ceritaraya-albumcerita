@@ -45,7 +45,6 @@ export default async function PublicAlbumPage({ params }: PageProps) {
       .from('photos')
       .select('guest_token')
       .eq('event_id', event.id)
-      .eq('is_hidden', false)
       .is('deleted_at', null),
   ]);
 

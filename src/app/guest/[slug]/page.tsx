@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
 import Link from 'next/link';
@@ -58,33 +58,9 @@ export default async function GuestPage({ params }: PageProps) {
     return <GuestAuth slug={slug} initialStep="name" eventName={event.name} hostName={event.host_name ?? undefined} theme={event.theme ?? undefined} coverImageUrl={finalCoverUrl} />;
   }
 
-  // If published, event is closed for new contributions
+  // If published, event is closed for new contributions and becomes a view-only album
   if (event.is_published) {
-    return (
-      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[var(--bg-primary)] px-6 py-12 text-center">
-        <div className="w-full max-w-sm rounded-2xl bg-[var(--bg-primary)] p-8 shadow-sm border border-[var(--bg-tertiary)]">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-[var(--theme-primary)]">
-              <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <h1 className="font-heading text-2xl text-[var(--text-primary)] mb-3">
-            Album Published
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">
-            This album has been published and is now closed for new contributions.
-            <br/><br/>
-            Thank you for being part of this story.
-          </p>
-          <Link
-            href={`/album/${slug}`}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--theme-secondary)]"
-          >
-            View Published Album
-          </Link>
-        </div>
-      </div>
-    );
+    redirect(`/album/${slug}`);
   }
 
   // ── Data fetching ──────────────────────────────────────────────────────────
@@ -118,7 +94,6 @@ export default async function GuestPage({ params }: PageProps) {
       .from('photos')
       .select('guest_token')
       .eq('event_id', event.id)
-      .eq('is_hidden', false)
       .is('deleted_at', null),
   ]);
 

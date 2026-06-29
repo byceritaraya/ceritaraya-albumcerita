@@ -3,6 +3,7 @@ import { cookies, headers } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
 import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
 import { HostAuth } from './host-auth';
+import { HostWelcome } from './host-welcome';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -78,7 +79,7 @@ export default async function HostPage({ params }: PageProps) {
   const [
     { data: rawPhotos },
     { count: totalPhotos },
-    { count: totalContributors },
+    { data: rawContributorNames },
   ] = await Promise.all([
     supabase
       .from('photos')
@@ -90,12 +91,16 @@ export default async function HostPage({ params }: PageProps) {
       .from('photos')
       .select('id', { count: 'exact', head: true })
       .eq('event_id', event.id)
-      .eq('is_hidden', false),
+      .eq('is_hidden', false)
+      .is('deleted_at', null),
     supabase
-      .from('contributors')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', event.id),
+      .from('photos')
+      .select('guest_name')
+      .eq('event_id', event.id)
+      .is('deleted_at', null),
   ]);
+
+  const totalContributors = new Set(rawContributorNames?.map(r => r.guest_name) ?? []).size;
 
   // ── Signed URLs ────────────────────────────────────────────────────────────
   const photos: AlbumPhoto[] = [];
@@ -128,21 +133,32 @@ export default async function HostPage({ params }: PageProps) {
   
   const publicUrl = `${protocol}://${hostHeader}/album/${slug}`;
 
+  const showWelcome = cookieStore.has(`show_host_welcome_${slug}`);
+
   return (
-    <AlbumView
-      role="host"
-      eventId={event.event_id}
-      eventName={event.name}
-      hostName={event.host_name ?? undefined}
-      coverImageUrl={finalCoverUrl}
-      theme={event.theme ?? undefined}
-      photos={photos}
-      totalPhotos={totalPhotos ?? 0}
-      totalContributors={totalContributors ?? 0}
-      guestUrl={guestUrl}
-      slug={slug}
-      isPublished={event.is_published}
-      publicUrl={publicUrl}
-    />
+    <>
+      {showWelcome && (
+        <HostWelcome
+          slug={slug}
+          hostName={event.host_name ?? 'Host'}
+          theme={event.theme ?? undefined}
+        />
+      )}
+      <AlbumView
+        role="host"
+        eventId={event.event_id}
+        eventName={event.name}
+        hostName={event.host_name ?? undefined}
+        coverImageUrl={finalCoverUrl}
+        theme={event.theme ?? undefined}
+        photos={photos}
+        totalPhotos={totalPhotos ?? 0}
+        totalContributors={totalContributors ?? 0}
+        guestUrl={guestUrl}
+        slug={slug}
+        isPublished={event.is_published}
+        publicUrl={publicUrl}
+      />
+    </>
   );
 }

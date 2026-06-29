@@ -390,7 +390,7 @@ export function UploadForm({
           type="button"
           onClick={handleUpload}
           disabled={isUploading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--theme-primary)] px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
         >
           {isUploading ? (
             <>
@@ -414,7 +414,7 @@ export function UploadForm({
             type="button"
             onClick={() => cameraInputRef.current?.click()}
             disabled={isUploading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
+            className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
           >
             <IconCamera className="h-4 w-4" />
             Take Photo
@@ -425,7 +425,7 @@ export function UploadForm({
             type="button"
             onClick={() => galleryInputRef.current?.click()}
             disabled={isUploading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-primary)] px-5 py-3 text-sm font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
+            className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-primary)] px-6 text-sm font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
           >
             <IconGallery className="h-4 w-4 text-[var(--theme-primary)]" />
             From Gallery

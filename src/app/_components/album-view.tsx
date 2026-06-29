@@ -3,8 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadForm } from '@/app/event/[eventId]/upload-form';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { PhotoLightbox } from './photo-lightbox';
 
 export interface AlbumPhoto {
   id: string;
@@ -69,6 +68,14 @@ function IconGrid({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path fillRule="evenodd" d="M3 6a3 3 0 0 1 3-3h2.25a3 3 0 0 1 3 3v2.25a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6Zm9.75 0a3 3 0 0 1 3-3H18a3 3 0 0 1 3 3v2.25a3 3 0 0 1-3 3h-2.25a3 3 0 0 1-3-3V6ZM3 15.75a3 3 0 0 1 3-3h2.25a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-2.25Zm9.75 0a3 3 0 0 1 3-3H18a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3h-2.25a3 3 0 0 1-3-3v-2.25Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function IconFilmRoll({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M3.5 2A1.5 1.5 0 0 0 2 3.5v17A1.5 1.5 0 0 0 3.5 22h17a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 20.5 2h-17ZM3.5 4h3v3h-3V4Zm0 5h3v3h-3V9Zm0 5h3v3h-3v-3Zm13.5 3h3v-3h-3v3Zm0-5h3V9h-3v3Zm0-5h3V4h-3v3ZM9 4v16h6V4H9Z" clipRule="evenodd" />
     </svg>
   );
 }
@@ -140,42 +147,6 @@ function StatItem({ icon, value, label }: { icon: React.ReactNode; value: number
   );
 }
 
-// ─── Photo Modal ──────────────────────────────────────────────────────────────
-
-function PhotoModal({ photo, onClose, onPrev, onNext, hasPrev, hasNext }: {
-  photo: AlbumPhoto; onClose: () => void; onPrev: () => void; onNext: () => void; hasPrev: boolean; hasNext: boolean;
-}) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft' && hasPrev) onPrev();
-      if (e.key === 'ArrowRight' && hasNext) onNext();
-    };
-    window.addEventListener('keydown', handler);
-    document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
-  }, [onClose, onPrev, onNext, hasPrev, hasNext]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 backdrop-blur-sm" onClick={onClose}>
-      <button onClick={onClose} className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition" aria-label="Close">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-          <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-        </svg>
-      </button>
-      {hasPrev && <button onClick={e => { e.stopPropagation(); onPrev(); }} className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition" aria-label="Previous"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path fillRule="evenodd" d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 1 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z" clipRule="evenodd" /></svg></button>}
-      {hasNext && <button onClick={e => { e.stopPropagation(); onNext(); }} className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition" aria-label="Next"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path fillRule="evenodd" d="M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clipRule="evenodd" /></svg></button>}
-      <div className="relative max-h-[92dvh] max-w-[94dvw]" onClick={e => e.stopPropagation()}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={photo.original_url} alt={`Photo by ${photo.guest_name}`} className="max-h-[85dvh] max-w-[94dvw] rounded-2xl object-contain shadow-2xl" />
-        <p className="absolute bottom-3 left-3 rounded-full bg-black/50 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-          Taken by {photo.guest_name}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // ─── Album View ───────────────────────────────────────────────────────────────
 
 export function AlbumView(props: AlbumViewProps) {
@@ -214,6 +185,10 @@ export function AlbumView(props: AlbumViewProps) {
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  
+  // Download states
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadingContributor, setDownloadingContributor] = useState<string | null>(null);
 
   const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
@@ -372,6 +347,39 @@ export function AlbumView(props: AlbumViewProps) {
     }
   }
 
+  async function handleDownloadAlbum() {
+    if (!slug) return;
+    setIsDownloading(true);
+    try {
+      const a = document.createElement('a');
+      a.href = `/api/download/${slug}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      // Small timeout to allow the browser to start download
+      setTimeout(() => setIsDownloading(false), 3000);
+    }
+  }
+
+  async function handleDownloadContributor(guestName: string) {
+    if (!slug) return;
+    setDownloadingContributor(guestName);
+    try {
+      const a = document.createElement('a');
+      a.href = `/api/download/${slug}?contributor=${encodeURIComponent(guestName)}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTimeout(() => setDownloadingContributor(null), 3000);
+    }
+  }
+
   return (
     <div className={`min-h-[100dvh] bg-[var(--bg-primary)] ${themeClass}`}>
       {/* ── Top bar ── */}
@@ -427,27 +435,17 @@ export function AlbumView(props: AlbumViewProps) {
           By AlbumCerita
         </p>
 
-        {role === 'host' && hostName && (
-          <div className="mb-6 rounded-xl bg-[var(--theme-primary)]/5 p-5 border border-[var(--theme-primary)]/10">
-            <h2 className="text-lg font-heading text-[var(--text-primary)] mb-1">
-              Welcome to your own moments, {hostName}.
-            </h2>
-            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              This is where memories captured by your guests come together. Review, curate, and share the best moments.
-            </p>
-          </div>
-        )}
 
         {/* ── Stats row ── */}
         <div className={`flex items-center ${role === 'host' ? 'justify-center gap-8' : 'justify-between'} overflow-x-auto py-2 no-scrollbar`}>
-          <StatItem icon={<IconUsers className="h-4 w-4" />} value={totalContributors} label="Guests" />
+          <StatItem icon={<IconUsers className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalContributors} label="Moment Takers" />
           <div className="w-px h-10 bg-[var(--theme-secondary)] opacity-30 self-center" />
-          <StatItem icon={<IconImage className="h-4 w-4" />} value={totalPhotos} label="Moments" />
+          <StatItem icon={<IconImage className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalPhotos} label="Moments" />
           
           {role === 'guest' && shotsLeft !== null && (
             <>
               <div className="w-px h-10 bg-[var(--theme-secondary)] opacity-30 self-center" />
-              <StatItem icon={<IconGrid className="h-4 w-4" />} value={shotsLeft} label="Shots Left" />
+              <StatItem icon={<IconFilmRoll className="h-4 w-4 text-[var(--theme-primary)]" />} value={shotsLeft} label="Shots Left" />
             </>
           )}
 
@@ -488,7 +486,18 @@ export function AlbumView(props: AlbumViewProps) {
 
         {/* ── Action buttons / Upload Panel ── */}
         <div className="mt-5">
-          {role === 'guest' ? (
+          {isPublished ? (
+            <button
+              onClick={handleDownloadAlbum}
+              disabled={isDownloading}
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] active:scale-[0.97] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
+              </svg>
+              {isDownloading ? 'Preparing your album...' : 'Download Curated Album'}
+            </button>
+          ) : role === 'guest' ? (
             <UploadForm
               eventId={eventId}
               photosUsed={photosUsed}
@@ -501,7 +510,7 @@ export function AlbumView(props: AlbumViewProps) {
               {guestUrl ? (
                 <button
                   onClick={shareGuestLink}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] active:scale-[0.97]"
+                  className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
                 >
                   <IconShare className="h-4 w-4" />
                   Share Guest Link
@@ -512,7 +521,7 @@ export function AlbumView(props: AlbumViewProps) {
               {!isPublished ? (
                 <button
                   onClick={() => setShowPublishModal(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-[var(--theme-primary)] bg-transparent px-5 py-3 text-sm font-semibold text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/5"
+                  className="flex h-14 w-full items-center justify-center gap-2 rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-primary)] px-6 text-sm font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
                 >
                   Publish Album
                 </button>
@@ -743,6 +752,18 @@ export function AlbumView(props: AlbumViewProps) {
                         <span className="text-xs font-medium bg-[var(--bg-tertiary)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full ml-1">
                           {groupPhotos.length} {groupPhotos.length === 1 ? 'Moment' : 'Moments'}
                         </span>
+                        {role === 'host' && (
+                          <button
+                            onClick={() => handleDownloadContributor(guestName)}
+                            disabled={downloadingContributor === guestName}
+                            className="ml-auto text-xs flex items-center gap-1 font-semibold bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] px-3 py-1.5 rounded-full hover:bg-[var(--theme-primary)]/20 transition disabled:opacity-50"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                              <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
+                            </svg>
+                            {downloadingContributor === guestName ? 'Preparing...' : 'Download'}
+                          </button>
+                        )}
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         {groupPhotos.map((photo) => {
@@ -843,13 +864,15 @@ export function AlbumView(props: AlbumViewProps) {
 
       {/* ── Lightbox modal ── */}
       {selectedIndex !== null && visiblePhotos[selectedIndex] && (
-        <PhotoModal
+        <PhotoLightbox
           photo={visiblePhotos[selectedIndex]}
           onClose={closeModal}
           onPrev={goPrev}
           onNext={goNext}
           hasPrev={selectedIndex > 0}
           hasNext={selectedIndex < visiblePhotos.length - 1}
+          eventName={eventName}
+          photoNumber={selectedIndex + 1}
         />
       )}
 
