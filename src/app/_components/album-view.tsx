@@ -194,7 +194,10 @@ export function AlbumView(props: AlbumViewProps) {
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
   const themeClass = `theme-${safeTheme.toLowerCase()}`;
   const shotsLeft = photosPerGuest > 0 ? Math.max(0, photosPerGuest - localPhotosUsed) : null;
-  const baseVisiblePhotos = role === 'host' ? photos : photos.filter(p => !p.is_hidden);
+  // Hosts see all photos. Guests see non-hidden photos from others + all their own (for delete).
+  const baseVisiblePhotos = role === 'host'
+    ? photos
+    : photos.filter(p => !p.is_hidden || p.guest_token === currentContributorToken);
   const hiddenPhotosCount = photos.filter(p => p.is_hidden).length;
   
   const visiblePhotos = [...baseVisiblePhotos].sort((a, b) => {
@@ -502,6 +505,7 @@ export function AlbumView(props: AlbumViewProps) {
               eventId={eventId}
               photosUsed={photosUsed}
               photosPerGuest={photosPerGuest}
+              theme={theme}
               onUploadComplete={handleUploadComplete}
             />
           ) : role === 'host' ? (

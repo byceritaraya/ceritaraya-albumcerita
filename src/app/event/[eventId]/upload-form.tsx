@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { uploadPhoto } from './actions';
+import { CameraScreen } from '@/app/_components/camera/camera-screen';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,12 +15,14 @@ interface QueuedShot {
   previewUrl: string; // object URL — must be revoked on cleanup
   status: ShotStatus;
   errorMsg?: string;
+  source?: 'gallery' | 'camera';
 }
 
 export interface UploadFormProps {
   eventId: string;
   photosUsed: number;
   photosPerGuest: number; // 0 = unlimited
+  theme?: string;
   onUploadComplete: () => void;
 }
 
@@ -190,12 +194,14 @@ export function UploadForm({
   eventId,
   photosUsed,
   photosPerGuest,
+  theme,
   onUploadComplete,
 }: UploadFormProps) {
   const [queue, setQueue] = useState<QueuedShot[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [globalMessage, setGlobalMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -215,9 +221,12 @@ export function UploadForm({
   const capturedCount = queue.length;
   const canCapture = remainingSlots > 0;
 
+  // Camera shots no longer auto-upload — they join the shared queue and upload
+  // together with gallery shots when the guest taps "Share Captured Moments".
+
   // ── Enqueue files ────────────────────────────────────────────────────────────
   const enqueueFiles = useCallback(
-    (files: FileList | null) => {
+    (files: FileList | File[] | null, source: 'gallery' | 'camera' = 'gallery') => {
       if (!files || files.length === 0) return;
       setGlobalMessage(null);
 
@@ -236,6 +245,7 @@ export function UploadForm({
         file,
         previewUrl: URL.createObjectURL(file),
         status: 'pending',
+        source,
       }));
 
       setQueue((prev) => [...prev, ...newShots]);
@@ -326,7 +336,20 @@ export function UploadForm({
   const showUploadCta = pendingCount > 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <>
+      {showCamera && typeof document !== 'undefined' && createPortal(
+        <CameraScreen
+          remainingShots={remainingSlots}
+          totalShots={unlimited ? null : photosPerGuest}
+          theme={theme}
+          pendingUploadCount={0}
+          onClose={() => setShowCamera(false)}
+          onCaptureComplete={(files) => enqueueFiles(files, 'camera')}
+        />,
+        document.body
+      )}
+
+      <div className="flex flex-col gap-4">
 
       {/* ── Shot counter (Removed — redundant with AlbumView stats) ── */}
 
@@ -351,7 +374,7 @@ export function UploadForm({
               Captured Moments
             </h3>
             {pendingCount > 0 && (
-              <span className="text-xs text-[var(--text-secondary)]">{pendingCount} ready to upload</span>
+              <span className="text-xs text-[var(--text-secondary)]">{pendingCount} ready to share</span>
             )}
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -371,7 +394,7 @@ export function UploadForm({
             {canCapture && queue.length > 0 && (
               <button
                 type="button"
-                onClick={() => cameraInputRef.current?.click()}
+                onClick={() => setShowCamera(true)}
                 className="flex aspect-square w-full items-center justify-center rounded-xl border-2 border-dashed border-[var(--theme-secondary)]/50 bg-[var(--theme-primary)]/5 text-[var(--theme-primary)]/60 transition hover:border-[var(--theme-primary)] hover:text-[var(--theme-primary)]"
                 aria-label="Capture another moment"
               >
@@ -412,7 +435,7 @@ export function UploadForm({
           {/* Primary: camera */}
           <button
             type="button"
-            onClick={() => cameraInputRef.current?.click()}
+            onClick={() => setShowCamera(true)}
             disabled={isUploading}
             className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
           >
@@ -434,7 +457,7 @@ export function UploadForm({
       )}
 
       {/* Quota full */}
-      {!canCapture && pendingCount === 0 && (
+      {!canCapture && queue.length === 0 && (
         <p className="text-center text-xs text-[var(--text-muted)]">
           {unlimited
             ? 'All moments have been uploaded.'
@@ -473,5 +496,6 @@ export function UploadForm({
         <PreviewModal previewUrl={previewUrl} onClose={() => setPreviewUrl(null)} />
       )}
     </div>
+    </>
   );
 }

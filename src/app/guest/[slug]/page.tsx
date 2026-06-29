@@ -67,6 +67,7 @@ export default async function GuestPage({ params }: PageProps) {
   const [
     { count: photosUsed },
     { data: rawPhotos },
+    { data: rawOwnPhotos },
     { count: totalPhotos },
     { data: rawContributorTokens },
   ] = await Promise.all([
@@ -76,14 +77,24 @@ export default async function GuestPage({ params }: PageProps) {
       .eq('event_id', event.id)
       .eq('guest_token', contributorId)
       .is('deleted_at', null),
+    // All non-hidden photos from others
     supabase
       .from('photos')
-      .select('id, original_url, storage_path, uploaded_at, guest_name, guest_token')
+      .select('id, original_url, storage_path, uploaded_at, guest_name, guest_token, is_hidden')
       .eq('event_id', event.id)
       .eq('is_hidden', false)
+      .neq('guest_token', contributorId)
       .is('deleted_at', null)
       .order('uploaded_at', { ascending: false })
       .limit(24),
+    // Guest's own photos (including hidden) so they can delete them
+    supabase
+      .from('photos')
+      .select('id, original_url, storage_path, uploaded_at, guest_name, guest_token, is_hidden')
+      .eq('event_id', event.id)
+      .eq('guest_token', contributorId)
+      .is('deleted_at', null)
+      .order('uploaded_at', { ascending: false }),
     supabase
       .from('photos')
       .select('id', { count: 'exact', head: true })
@@ -101,17 +112,24 @@ export default async function GuestPage({ params }: PageProps) {
 
   // ── Signed URLs ────────────────────────────────────────────────────────────
   const photos: AlbumPhoto[] = [];
-  if (rawPhotos && rawPhotos.length > 0) {
+
+  // Merge own + others, dedup by id (own photos take precedence)
+  const allRaw = [...(rawOwnPhotos ?? []), ...(rawPhotos ?? [])].reduce<typeof rawPhotos>((acc, p) => {
+    if (!acc) return [p];
+    if (!acc.find(x => x.id === p.id)) acc.push(p);
+    return acc;
+  }, []);
+
+  if (allRaw && allRaw.length > 0) {
     const { data: signedData } = await supabase.storage
       .from('albumcerita_photos')
-      .createSignedUrls(rawPhotos.map(p => p.storage_path), 3600);
+      .createSignedUrls(allRaw.map(p => p.storage_path), 3600);
 
-    for (const p of rawPhotos) {
+    for (const p of allRaw) {
       const signed = signedData?.find(s => s.path === p.storage_path);
       photos.push({ ...p, original_url: signed?.signedUrl ?? p.original_url });
     }
   }
-
 
 
   const showWelcome = cookieStore.has(`show_welcome_${contributorId}`);
@@ -141,6 +159,7 @@ export default async function GuestPage({ params }: PageProps) {
         photosUsed={photosUsed ?? 0}
         photosPerGuest={event.photos_per_guest}
         currentContributorToken={contributorId}
+        slug={slug}
       />
     </>
   );
