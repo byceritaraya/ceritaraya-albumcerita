@@ -154,7 +154,7 @@ export function AlbumView(props: AlbumViewProps) {
     role, eventId, eventName, hostName, coverImageUrl, theme,
     photos: initialPhotos, totalPhotos, totalContributors,
     contributorName, photosUsed = 0, photosPerGuest = 0,
-    guestUrl, slug, isPublished = false, publicUrl,
+    guestUrl, slug, isPublished = false, publicUrl, currentContributorToken
   } = props;
 
   const router = useRouter();

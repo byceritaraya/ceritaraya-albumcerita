@@ -79,7 +79,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
   const urlMap = new Map<string, string>();
   signedData.forEach(s => {
     if (s.signedUrl) {
-      urlMap.set(s.path, s.signedUrl);
+      urlMap.set(s.path, s.signedUrl as string);
     }
   });
 
