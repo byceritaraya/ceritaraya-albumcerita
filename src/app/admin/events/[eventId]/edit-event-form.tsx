@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { updateEventAction } from './actions';
+import { useT } from '@/lib/i18n/use-t';
 
 const THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
 const RETENTION_OPTIONS = [1, 3, 6, 12];
@@ -28,6 +28,7 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useT();
 
   function handleChange(key: keyof typeof values, value: string | number) {
     setValues(v => ({ ...v, [key]: value }));
@@ -103,21 +104,21 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
             <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
           </svg>
-          Changes saved successfully.
+          {t.adminEditEvent.saved}
         </div>
       )}
 
 
       {/* Cover Image */}
       <div className="flex flex-col gap-1.5 pb-2">
-        <label className="block text-xs font-medium text-gray-500">Cover Image</label>
+        <label className="block text-xs font-medium text-gray-500">{t.adminEditEvent.coverImage}</label>
         {coverPreview ? (
           <div className="relative h-40 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={coverPreview} alt="Cover preview" className="h-full w-full object-cover" />
             <div className="absolute right-2 top-2 flex gap-2">
               <label className="cursor-pointer rounded-md bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm backdrop-blur-sm transition hover:bg-white">
-                Replace
+                {t.adminEditEvent.replace}
                 <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
               </label>
               <button
@@ -125,7 +126,7 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
                 onClick={handleRemoveCover}
                 className="rounded-md bg-red-500/90 px-3 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur-sm transition hover:bg-red-600"
               >
-                Remove
+                {t.adminEditEvent.remove}
               </button>
             </div>
           </div>
@@ -134,7 +135,7 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="mb-2 h-6 w-6 text-gray-400">
               <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
             </svg>
-            <span className="text-sm font-medium text-gray-600">Upload Cover Image</span>
+            <span className="text-sm font-medium text-gray-600">{t.adminEditEvent.uploadCover}</span>
             <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
           </label>
         )}
@@ -143,7 +144,7 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         {/* Event Name */}
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Event Name *</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t.adminEditEvent.eventName}</label>
           <input
             type="text"
             value={values.name}
@@ -156,7 +157,7 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
 
         {/* Host Name */}
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Host Name <span className="text-gray-400 font-normal">(optional)</span></label>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t.adminEditEvent.hostName} <span className="text-gray-400 font-normal">{t.adminEditEvent.optional}</span></label>
           <input
             type="text"
             value={values.host_name}
@@ -168,7 +169,7 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
 
         {/* Theme */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Theme</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t.adminEditEvent.theme}</label>
           <select
             value={values.theme}
             onChange={e => handleChange('theme', e.target.value)}
@@ -180,42 +181,42 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
 
         {/* Retention */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Retention</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t.adminEditEvent.retention}</label>
           <select
             value={values.retention_months}
             onChange={e => handleChange('retention_months', Number(e.target.value))}
             className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 transition"
           >
             {RETENTION_OPTIONS.map(n => (
-              <option key={n} value={n}>{n} month{n !== 1 ? 's' : ''}</option>
+              <option key={n} value={n}>{t.adminEditEvent.months(n)}</option>
             ))}
           </select>
         </div>
 
         {/* Max Contributors */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Max Contributors</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t.adminEditEvent.maxContributors}</label>
           <select
             value={values.max_contributors}
             onChange={e => handleChange('max_contributors', Number(e.target.value))}
             className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 transition"
           >
             {CONTRIBUTOR_OPTIONS.map(n => (
-              <option key={n} value={n}>{n === 9999 ? 'Unlimited' : n}</option>
+              <option key={n} value={n}>{n === 9999 ? t.adminEditEvent.unlimited : n}</option>
             ))}
           </select>
         </div>
 
         {/* Photos per Guest */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Photos Per Guest</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t.adminEditEvent.photosPerGuest}</label>
           <select
             value={values.photos_per_guest}
             onChange={e => handleChange('photos_per_guest', Number(e.target.value))}
             className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 transition"
           >
             {PHOTOS_OPTIONS.map(n => (
-              <option key={n} value={n}>{n} photos</option>
+              <option key={n} value={n}>{t.adminEditEvent.photos(n)}</option>
             ))}
           </select>
         </div>
@@ -233,9 +234,9 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
               </svg>
-              Saving…
+              {t.adminEditEvent.saving}
             </>
-          ) : 'Save Changes'}
+          ) : t.adminEditEvent.saveChanges}
         </button>
       </div>
     </form>

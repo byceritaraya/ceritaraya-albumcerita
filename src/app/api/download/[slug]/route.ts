@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
-import { ZipArchive } from 'archiver';
-import { Readable, PassThrough } from 'stream';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const archiver = require('archiver');
+import { PassThrough } from 'stream';
 
 export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -78,13 +79,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
 
   const urlMap = new Map<string, string>();
   signedData.forEach(s => {
-    if (s.signedUrl) {
+    if (s.signedUrl && s.path) {
       urlMap.set(s.path, s.signedUrl as string);
     }
   });
 
   // 6. Setup Archiver & Stream
-  const archive = new ZipArchive({
+  const archive = archiver('zip', {
     zlib: { level: 0 } // No compression for images to reduce CPU and increase speed
   });
 

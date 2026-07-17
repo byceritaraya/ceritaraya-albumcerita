@@ -3,6 +3,7 @@
 import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Download, Link as LinkIcon } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { useT } from '@/lib/i18n/use-t';
 
 import { ResetPinButton } from './reset-pin-button';
 
@@ -19,6 +20,7 @@ export function AccessCard({ eventId, title, slug, pin, baseUrl, type }: AccessC
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
   const qrRef = useRef<SVGSVGElement>(null);
+  const { t } = useT();
 
   if (!slug) return null; // Wait for backfill or additive fields
 
@@ -64,7 +66,7 @@ export function AccessCard({ eventId, title, slug, pin, baseUrl, type }: AccessC
         
         <div className="space-y-3">
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-gray-500">Link</span>
+            <span className="text-xs font-medium uppercase tracking-wider text-gray-500">{t.adminAccessCard.link}</span>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg text-sm text-gray-600 truncate">
                 {link}
@@ -72,7 +74,7 @@ export function AccessCard({ eventId, title, slug, pin, baseUrl, type }: AccessC
               <button 
                 onClick={copyLink}
                 className="shrink-0 flex items-center justify-center p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-gray-600"
-                title="Copy Link"
+                title={t.adminAccessCard.copyLink}
               >
                 <LinkIcon size={16} className={copiedLink ? "text-green-600" : ""} />
               </button>
@@ -80,16 +82,16 @@ export function AccessCard({ eventId, title, slug, pin, baseUrl, type }: AccessC
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-gray-500">PIN</span>
+            <span className="text-xs font-medium uppercase tracking-wider text-gray-500">{t.adminAccessCard.pin}</span>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg text-sm font-mono text-gray-900 tracking-widest">
-                {pin ? pin : "•••••• (Hidden)"}
+                {pin ? pin : t.adminAccessCard.hidden}
               </div>
               {pin && (
                 <button 
                   onClick={copyPin}
                   className="shrink-0 flex items-center justify-center p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-gray-600"
-                  title="Copy PIN"
+                  title={t.adminAccessCard.copyPin}
                 >
                   <Copy size={16} className={copiedPin ? "text-green-600" : ""} />
                 </button>
@@ -97,7 +99,7 @@ export function AccessCard({ eventId, title, slug, pin, baseUrl, type }: AccessC
             </div>
             {!pin && (
               <div className="flex items-center mt-1">
-                <p className="text-xs text-gray-400">PIN is only shown once upon creation or reset.</p>
+                <p className="text-xs text-gray-400">{t.adminAccessCard.pinHiddenDesc}</p>
                 <ResetPinButton eventId={eventId} target={type} />
               </div>
             )}
@@ -120,7 +122,7 @@ export function AccessCard({ eventId, title, slug, pin, baseUrl, type }: AccessC
           className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
         >
           <Download size={16} />
-          Download QR
+          {t.adminAccessCard.downloadQr}
         </button>
       </div>
     </div>

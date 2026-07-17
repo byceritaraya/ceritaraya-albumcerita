@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import type { AlbumPhoto } from '@/app/_components/album-view';
+import { useT } from '@/lib/i18n/use-t';
 
 export interface PhotoLightboxProps {
   photo: AlbumPhoto;
@@ -15,6 +16,8 @@ export interface PhotoLightboxProps {
 }
 
 export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext, eventName, photoNumber }: PhotoLightboxProps) {
+  const { t } = useT();
+
   // Swipe detection
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -101,12 +104,13 @@ export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Failed to download image', err);
+    } catch {
+      console.error('Failed to download image.');
     }
   };
   
-  const toggleZoom = (e: React.MouseEvent | React.TouchEvent) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const toggleZoom = (_e: React.MouseEvent | React.TouchEvent) => {
     if (scale === 1) {
       setScale(2.5);
       setIsZoomed(true);
@@ -124,16 +128,16 @@ export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext
       {/* Top Header */}
       <div className="absolute top-0 inset-x-0 h-16 flex items-center justify-between px-4 bg-gradient-to-b from-black/60 to-transparent z-20" onClick={e => e.stopPropagation()}>
         <div className="flex flex-col">
-          <span className="text-white font-medium text-sm">Taken by {photo.guest_name}</span>
-          <span className="text-white/70 text-xs">{captureDate} at {captureTime}</span>
+          <span className="text-white font-medium text-sm">{t.lightbox.takenBy(photo.guest_name)}</span>
+          <span className="text-white/70 text-xs">{captureDate} · {captureTime}</span>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={handleDownload} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition" aria-label="Download">
+          <button onClick={handleDownload} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition" aria-label={t.lightbox.download}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
               <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
             </svg>
           </button>
-          <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition" aria-label="Close">
+          <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition" aria-label={t.lightbox.close}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
               <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
             </svg>
@@ -142,7 +146,7 @@ export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext
       </div>
 
       {hasPrev && (
-        <button onClick={e => { e.stopPropagation(); onPrev(); }} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition hidden sm:flex" aria-label="Previous">
+        <button onClick={e => { e.stopPropagation(); onPrev(); }} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition hidden sm:flex" aria-label={t.lightbox.prev}>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
             <path fillRule="evenodd" d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 1 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z" clipRule="evenodd" />
           </svg>
@@ -150,7 +154,7 @@ export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext
       )}
 
       {hasNext && (
-        <button onClick={e => { e.stopPropagation(); onNext(); }} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition hidden sm:flex" aria-label="Next">
+        <button onClick={e => { e.stopPropagation(); onNext(); }} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition hidden sm:flex" aria-label={t.lightbox.next}>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
             <path fillRule="evenodd" d="M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clipRule="evenodd" />
           </svg>

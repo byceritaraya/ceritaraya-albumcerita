@@ -18,6 +18,8 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "check_schema.js",
+      "test-query.js",
     ],
   },
 ];

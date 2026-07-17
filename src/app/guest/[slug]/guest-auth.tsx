@@ -1,37 +1,55 @@
 'use client';
 
-import { useActionState, useState, useEffect } from 'react';
+import { useActionState, useState, useEffect, useCallback } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import { authenticateGuest } from './actions';
+import { useT } from '@/lib/i18n/use-t';
+import { SplashScreen } from '@/app/_components/splash-screen';
+import { LangSwitcher } from '@/app/_components/lang-switcher';
 
 function SubmitButton({ text }: { text: string }) {
   const { pending } = useFormStatus();
+  const { t } = useT();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--theme-secondary)] disabled:opacity-50"
+      className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition-all hover:bg-[var(--theme-secondary)] disabled:opacity-50 active:scale-[0.97]"
     >
-      {pending ? 'Processing...' : text}
+      {pending ? t.guestAuth.pending : text}
     </button>
   );
 }
 
-export function GuestAuth({ slug, initialStep = 'pin', eventName, hostName, theme, coverImageUrl }: { slug: string, initialStep?: 'pin' | 'name', eventName?: string, hostName?: string, theme?: string, coverImageUrl?: string }) {
+export function GuestAuth({
+  slug,
+  initialStep = 'pin',
+  eventName,
+  hostName,
+  theme,
+  coverImageUrl,
+}: {
+  slug: string;
+  initialStep?: 'pin' | 'name';
+  eventName?: string;
+  hostName?: string;
+  theme?: string;
+  coverImageUrl?: string;
+}) {
+  const { t } = useT();
   const searchParams = useSearchParams();
   const urlPin = searchParams.get('pin');
 
+  const [showSplash, setShowSplash] = useState(true);
   const [step, setStep] = useState<'pin' | 'name'>(urlPin ? 'name' : initialStep);
   const [pin, setPin] = useState(urlPin || '');
   const [state, formAction] = useActionState(authenticateGuest, {});
 
-  // If the server action returns a success for PIN, we move to name step
   if (state?.step === 'name' && step === 'pin') {
     setStep('name');
   }
 
-  // If there's a state error (e.g. wrong PIN from URL), we might want to drop back to PIN step
   useEffect(() => {
     if (state?.error && state.error.includes('PIN')) {
       setStep('pin');
@@ -43,8 +61,15 @@ export function GuestAuth({ slug, initialStep = 'pin', eventName, hostName, them
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
   const themeClass = `theme-${safeTheme.toLowerCase()}`;
 
+  const handleSplashDone = useCallback(() => setShowSplash(false), []);
+
   return (
     <div className={`min-h-[100dvh] bg-[var(--bg-primary)] ${themeClass} relative flex flex-col`}>
+      {/* Splash — only on first entry */}
+      {showSplash && (
+        <SplashScreen themeClass={themeClass} onDone={handleSplashDone} />
+      )}
+
       {/* Absolute Hero Background */}
       <div className="absolute top-0 inset-x-0 h-[60dvh] pointer-events-none">
         {coverImageUrl ? (
@@ -53,88 +78,97 @@ export function GuestAuth({ slug, initialStep = 'pin', eventName, hostName, them
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[var(--theme-primary)] to-[var(--theme-secondary)] opacity-50" />
         )}
-        <div 
-          className="absolute inset-0" 
+        <div
+          className="absolute inset-0"
           style={{
             background: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.20) 40%, rgba(var(--theme-bg-rgb),0.85) 80%, rgba(var(--theme-bg-rgb),1) 100%)'
           }}
         />
       </div>
 
+      {/* Language switcher */}
+      <div className="relative z-10 flex justify-end px-4 pt-4">
+        <LangSwitcher />
+      </div>
+
       {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 pt-[30dvh] pb-8">
+      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 pt-[20dvh] pb-8">
         <div className="w-full max-w-sm mx-auto">
           {step === 'pin' ? (
-            <div className="text-center space-y-4 mb-8">
-              <p className="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase drop-shadow-md">Guest</p>
-              <h1 className="font-heading text-3xl text-[var(--text-primary)] leading-tight">{eventName || 'Event'}</h1>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                Kamu diundang oleh {hostName || 'Host'}<br/>
-                untuk menjadi salah satu moment taker.<br/><br/>
-                Masukkan Event PIN untuk memulai.
+            <div className="text-center space-y-3 mb-8">
+              <p className="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase drop-shadow-md">
+                {t.guestAuth.roleLabel}
+              </p>
+              <h1 className="font-heading text-3xl text-[var(--text-primary)] leading-tight">
+                {t.guestAuth.pinTitle(eventName || 'Event')}
+              </h1>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">
+                {t.guestAuth.pinSubtitle(hostName || 'the host')}
               </p>
             </div>
           ) : (
-            <div className="text-center space-y-4 mb-8">
-              <p className="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase drop-shadow-md">Guest</p>
-              <h1 className="font-heading text-2xl text-[var(--text-primary)]">Siapa nama kamu?</h1>
+            <div className="text-center space-y-3 mb-8">
+              <p className="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase drop-shadow-md">
+                {t.guestAuth.roleLabel}
+              </p>
+              <h1 className="font-heading text-2xl text-[var(--text-primary)]">
+                {t.guestAuth.nameTitle}
+              </h1>
             </div>
           )}
 
-          <form action={formAction} className="flex flex-col gap-5">
+          <form action={formAction} className="flex flex-col gap-5" suppressHydrationWarning>
             <input type="hidden" name="slug" value={slug} />
             <input type="hidden" name="step" value={step} />
-            
+
             {state?.error && (
-              <div className="rounded-lg bg-[var(--theme-primary)]/10 p-3 text-sm text-[var(--theme-primary)] border border-[var(--theme-primary)]/20">
+              <div className="rounded-xl bg-[var(--theme-primary)]/10 p-3 text-sm text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 ac-toast-enter">
                 {state.error}
               </div>
             )}
 
-          {step === 'pin' ? (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="pin" className="sr-only">
-                Event PIN
-              </label>
-              <input
-                id="pin"
-                name="pin"
-                type="password"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                required
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                className="w-full rounded-lg border border-[var(--bg-tertiary)] bg-white/60 backdrop-blur-sm px-4 py-3 text-center text-lg tracking-[0.5em] text-[var(--text-primary)] shadow-sm focus:border-[var(--theme-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-primary)]"
-                placeholder="••••••"
-              />
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              <input type="hidden" name="pin" value={pin} />
-              <label htmlFor="display_name" className="sr-only">
-                Your Name
-              </label>
-              <input
-                id="display_name"
-                name="display_name"
-                type="text"
-                required
-                className="w-full rounded-lg border border-[var(--bg-tertiary)] bg-white/60 backdrop-blur-sm px-4 py-3 text-center text-lg text-[var(--text-primary)] shadow-sm focus:border-[var(--theme-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-primary)]"
-                placeholder="Nama Kamu"
-              />
-            </div>
-          )}
+            {step === 'pin' ? (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="pin" className="sr-only">{t.guestAuth.pinLabel}</label>
+                <input
+                  id="pin"
+                  name="pin"
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  required
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--bg-tertiary)] bg-white/60 backdrop-blur-sm px-4 py-3 text-center text-lg tracking-[0.5em] text-[var(--text-primary)] shadow-sm focus:border-[var(--theme-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-primary)] transition-colors"
+                  placeholder={t.guestAuth.pinPlaceholder}
+                  suppressHydrationWarning
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <input type="hidden" name="pin" value={pin} />
+                <label htmlFor="display_name" className="sr-only">{t.guestAuth.nameLabel}</label>
+                <input
+                  id="display_name"
+                  name="display_name"
+                  type="text"
+                  required
+                  autoFocus
+                  className="w-full rounded-xl border border-[var(--bg-tertiary)] bg-white/60 backdrop-blur-sm px-4 py-3 text-center text-lg text-[var(--text-primary)] shadow-sm focus:border-[var(--theme-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-primary)] transition-colors"
+                  placeholder={t.guestAuth.namePlaceholder}
+                />
+              </div>
+            )}
 
-          <SubmitButton text={step === 'pin' ? 'Accept Invitation' : 'Capture Their Moments'} />
-        </form>
-      </div>
+            <SubmitButton text={step === 'pin' ? t.guestAuth.submitPin : t.guestAuth.submitName} />
+          </form>
+        </div>
       </div>
 
       {/* Footer */}
       <div className="relative z-10 py-6 mt-auto text-center">
         <p className="text-xs text-[var(--text-muted)] leading-relaxed font-medium">
-          AlbumCerita<br/>by Cerita Raya
+          {t.brand.name}<br />{t.brand.tagline}
         </p>
       </div>
     </div>

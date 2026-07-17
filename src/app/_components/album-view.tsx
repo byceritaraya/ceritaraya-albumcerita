@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadForm } from '@/app/event/[eventId]/upload-form';
 import { PhotoLightbox } from './photo-lightbox';
+import { useT } from '@/lib/i18n/use-t';
+import { LangSwitcher } from '@/app/_components/lang-switcher';
 
 export interface AlbumPhoto {
   id: string;
@@ -64,14 +66,6 @@ function IconCamera({ className }: { className?: string }) {
   );
 }
 
-function IconGrid({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M3 6a3 3 0 0 1 3-3h2.25a3 3 0 0 1 3 3v2.25a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6Zm9.75 0a3 3 0 0 1 3-3H18a3 3 0 0 1 3 3v2.25a3 3 0 0 1-3 3h-2.25a3 3 0 0 1-3-3V6ZM3 15.75a3 3 0 0 1 3-3h2.25a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-2.25Zm9.75 0a3 3 0 0 1 3-3H18a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3h-2.25a3 3 0 0 1-3-3v-2.25Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
 function IconFilmRoll({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -121,19 +115,6 @@ function IconTrash({ className }: { className?: string }) {
   );
 }
 
-// ─── Vine Divider ─────────────────────────────────────────────────────────────
-
-function VineDivider() {
-  return (
-    <div className="flex items-center justify-center my-3 opacity-40">
-      <svg width="120" height="16" viewBox="0 0 120 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M60 8 C50 4, 40 12, 30 8 C20 4, 10 12, 0 8" stroke="currentColor" strokeWidth="1" fill="none" className="text-[var(--text-muted)]"/>
-        <path d="M60 8 C70 4, 80 12, 90 8 C100 4, 110 12, 120 8" stroke="currentColor" strokeWidth="1" fill="none" className="text-[var(--text-muted)]"/>
-        <circle cx="60" cy="8" r="2" fill="currentColor" className="text-[var(--text-muted)]"/>
-      </svg>
-    </div>
-  );
-}
 
 // ─── Stat Item ────────────────────────────────────────────────────────────────
 
@@ -150,6 +131,7 @@ function StatItem({ icon, value, label }: { icon: React.ReactNode; value: number
 // ─── Album View ───────────────────────────────────────────────────────────────
 
 export function AlbumView(props: AlbumViewProps) {
+  const { t } = useT();
   const {
     role, eventId, eventName, hostName, coverImageUrl, theme,
     photos: initialPhotos, totalPhotos, totalContributors,
@@ -198,6 +180,7 @@ export function AlbumView(props: AlbumViewProps) {
   const baseVisiblePhotos = role === 'host'
     ? photos
     : photos.filter(p => !p.is_hidden || p.guest_token === currentContributorToken);
+  
   const hiddenPhotosCount = photos.filter(p => p.is_hidden).length;
   
   const visiblePhotos = [...baseVisiblePhotos].sort((a, b) => {
@@ -208,13 +191,14 @@ export function AlbumView(props: AlbumViewProps) {
     }
   });
 
+  const myPhotos = role === 'guest'
+    ? [...baseVisiblePhotos].filter(p => p.guest_token === currentContributorToken).sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime())
+    : [];
+
   const openModal = useCallback((i: number) => setSelectedIndex(i), []);
   const closeModal = useCallback(() => setSelectedIndex(null), []);
   const goPrev = useCallback(() => setSelectedIndex(i => (i !== null && i > 0 ? i - 1 : i)), []);
   const goNext = useCallback(() => setSelectedIndex(i => (i !== null && i < visiblePhotos.length - 1 ? i + 1 : i)), [visiblePhotos.length]);
-
-  const myPhotos = role === 'guest' ? [...baseVisiblePhotos].filter(p => p.guest_token === props.currentContributorToken).sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()) : [];
-  const otherPhotos = role === 'guest' ? [...baseVisiblePhotos].filter(p => p.guest_token !== props.currentContributorToken).sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()) : [];
 
   function toggleSelection(id: string) {
     const next = new Set(selectedPhotoIds);
@@ -384,27 +368,28 @@ export function AlbumView(props: AlbumViewProps) {
   }
 
   return (
-    <div className={`min-h-[100dvh] bg-[var(--bg-primary)] ${themeClass}`}>
+    <div className={`relative min-h-[100dvh] bg-[var(--bg-primary)] ${themeClass}`}>
       {/* ── Top bar ── */}
-      <div className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-5 py-3 bg-white/80 backdrop-blur-md border-b border-black/5">
-        <div className="flex items-center gap-2">
+      <div className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-5 py-3"
+           style={{ background: 'linear-gradient(to bottom, rgba(var(--theme-bg-rgb),0.85) 0%, rgba(var(--theme-bg-rgb),0.0) 100%)', backdropFilter: 'blur(2px)' }}>
+        <div className="flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 text-[var(--theme-primary)]">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
           </svg>
-          <span className="font-semibold text-sm tracking-tight text-[var(--text-primary)]">AlbumCerita</span>
         </div>
         <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+          <LangSwitcher variant="inline" className="mr-3" />
           {role !== 'public' && (
             <>
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
                 <IconUsers className="h-3.5 w-3.5 text-[var(--theme-primary)]" />
               </div>
               <span className="font-medium text-xs text-[var(--text-secondary)]">
-                {role === 'host' ? (hostName || 'Host') : (contributorName || 'Guest')}
+                {role === 'host' ? (hostName || t.albumView.roleHost) : (contributorName || t.albumView.roleGuest)}
               </span>
               <span className="text-[var(--text-muted)] text-xs">
-                {role === 'host' ? '· Host' : '· Guest'}
+                · {role === 'host' ? t.albumView.roleHost : t.albumView.roleGuest}
               </span>
             </>
           )}
@@ -422,7 +407,7 @@ export function AlbumView(props: AlbumViewProps) {
         <div 
           className="absolute inset-0" 
           style={{
-            background: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.20) 40%, rgba(var(--theme-bg-rgb),0.85) 80%, rgba(var(--theme-bg-rgb),1) 100%)'
+            background: 'linear-gradient(to bottom, rgba(var(--theme-bg-rgb),0.05) 0%, rgba(var(--theme-bg-rgb),0.15) 40%, rgba(var(--theme-bg-rgb),0.88) 80%, rgba(var(--theme-bg-rgb),1) 100%)'
           }}
         />
       </div>
@@ -435,27 +420,27 @@ export function AlbumView(props: AlbumViewProps) {
           {eventName}
         </h1>
         <p className="mt-1 mb-6 text-sm text-[var(--text-muted)]">
-          By AlbumCerita
+          {t.albumView.byBrand}
         </p>
 
 
         {/* ── Stats row ── */}
         <div className={`flex items-center ${role === 'host' ? 'justify-center gap-8' : 'justify-between'} overflow-x-auto py-2 no-scrollbar`}>
-          <StatItem icon={<IconUsers className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalContributors} label="Moment Takers" />
+          <StatItem icon={<IconUsers className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalContributors} label={t.albumView.stats.momentTakers} />
           <div className="w-px h-10 bg-[var(--theme-secondary)] opacity-30 self-center" />
-          <StatItem icon={<IconImage className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalPhotos} label="Moments" />
+          <StatItem icon={<IconImage className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalPhotos} label={t.albumView.stats.moments} />
           
           {role === 'guest' && shotsLeft !== null && (
             <>
               <div className="w-px h-10 bg-[var(--theme-secondary)] opacity-30 self-center" />
-              <StatItem icon={<IconFilmRoll className="h-4 w-4 text-[var(--theme-primary)]" />} value={shotsLeft} label="Shots Left" />
+              <StatItem icon={<IconFilmRoll className="h-4 w-4 text-[var(--theme-primary)]" />} value={shotsLeft} label={t.albumView.stats.shotsLeft} />
             </>
           )}
 
           {role === 'host' && (
             <>
               <div className="w-px h-10 bg-[var(--theme-secondary)] opacity-30 self-center" />
-              <StatItem icon={<IconEyeOff className="h-4 w-4" />} value={hiddenPhotosCount} label="Hidden" />
+              <StatItem icon={<IconEyeOff className="h-4 w-4" />} value={hiddenPhotosCount} label={t.albumView.stats.hidden} />
             </>
           )}
         </div>
@@ -465,23 +450,23 @@ export function AlbumView(props: AlbumViewProps) {
           <div className="mt-6 rounded-xl border border-[var(--bg-tertiary)] bg-white/60 backdrop-blur-md p-5 shadow-sm text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-[var(--theme-primary)]/10 px-3 py-1 mb-3">
               <span className="h-2 w-2 rounded-full bg-[var(--theme-primary)]"></span>
-              <span className="text-xs font-semibold text-[var(--theme-primary)]">Published</span>
+              <span className="text-xs font-semibold text-[var(--theme-primary)]">{t.albumView.published}</span>
             </div>
-            <p className="text-sm text-[var(--text-secondary)] mb-2">Public Album</p>
+            <p className="text-sm text-[var(--text-secondary)] mb-2">{t.albumView.publicAlbum}</p>
             <p className="font-mono text-sm font-medium text-[var(--text-primary)] mb-4">{publicUrl}</p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={copyPublicLink}
                 className="flex items-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--theme-secondary)]"
               >
-                {copiedLink ? 'Copied!' : 'Copy Public Link'}
+                {copiedLink ? t.albumView.linkCopied : t.albumView.copyLink}
               </button>
               <button
                 onClick={handleUnpublish}
                 disabled={isPublishing}
                 className="flex items-center gap-2 rounded-lg border border-[var(--bg-tertiary)] bg-white px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
               >
-                {isPublishing ? 'Updating...' : 'Unpublish Album'}
+                {isPublishing ? t.albumView.saving : t.albumView.unpublish}
               </button>
             </div>
           </div>
@@ -498,14 +483,13 @@ export function AlbumView(props: AlbumViewProps) {
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                 <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
               </svg>
-              {isDownloading ? 'Preparing your album...' : 'Download Curated Album'}
+              {isDownloading ? t.albumView.preparingDownload : t.albumView.downloadAlbum}
             </button>
           ) : role === 'guest' ? (
             <UploadForm
               eventId={eventId}
               photosUsed={photosUsed}
               photosPerGuest={photosPerGuest}
-              theme={theme}
               onUploadComplete={handleUploadComplete}
             />
           ) : role === 'host' ? (
@@ -517,7 +501,7 @@ export function AlbumView(props: AlbumViewProps) {
                   className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
                 >
                   <IconShare className="h-4 w-4" />
-                  Share Guest Link
+                  {t.albumView.shareGuestLink}
                 </button>
               ) : (
                 <div />
@@ -527,7 +511,7 @@ export function AlbumView(props: AlbumViewProps) {
                   onClick={() => setShowPublishModal(true)}
                   className="flex h-14 w-full items-center justify-center gap-2 rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-primary)] px-6 text-sm font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
                 >
-                  Publish Album
+                  {t.albumView.publishAlbum}
                 </button>
               ) : (
                 <div />
@@ -540,7 +524,7 @@ export function AlbumView(props: AlbumViewProps) {
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             {role === 'host' && (
-              <h2 className="font-heading text-xl text-[var(--text-primary)]">Captured Moments</h2>
+              <h2 className="font-heading text-xl text-[var(--text-primary)]">{t.albumView.capturedMoments}</h2>
             )}
             {role === 'host' && visiblePhotos.length > 0 && (
               <div className="flex items-center gap-2">
@@ -550,8 +534,8 @@ export function AlbumView(props: AlbumViewProps) {
                   className="text-xs text-[var(--text-secondary)] font-medium bg-transparent outline-none focus:ring-0 border-none cursor-pointer py-1 pl-2 pr-6 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors"
                   style={{ WebkitAppearance: 'none' }}
                 >
-                  <option value="latest">Sort by Latest</option>
-                  <option value="contributor">Sort by Contributor</option>
+                  <option value="latest">{t.albumView.sortLatest}</option>
+                  <option value="contributor">{t.albumView.sortContributor}</option>
                 </select>
                 <button
                   onClick={() => {
@@ -560,7 +544,7 @@ export function AlbumView(props: AlbumViewProps) {
                   }}
                   className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${isSelectMode ? 'bg-[var(--theme-primary)] text-white' : 'bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/20'}`}
                 >
-                  {isSelectMode ? 'Cancel' : 'Select'}
+                  {isSelectMode ? t.albumView.cancelSelect : t.albumView.select}
                 </button>
               </div>
             )}
@@ -570,8 +554,8 @@ export function AlbumView(props: AlbumViewProps) {
           {visiblePhotos.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <IconCamera className="h-10 w-10 text-[var(--theme-primary)]/30 mb-3" />
-              <p className="text-sm font-medium text-[var(--text-muted)]">No moments yet</p>
-              {role === 'guest' && <p className="text-xs text-[var(--text-muted)] mt-1">Be the first to capture a moment!</p>}
+              <p className="text-sm font-medium text-[var(--text-muted)]">{t.albumView.emptyTitle}</p>
+              {role === 'guest' && <p className="text-xs text-[var(--text-muted)] mt-1">{t.albumView.emptyGuest}</p>}
             </div>
           )}
 
@@ -582,7 +566,7 @@ export function AlbumView(props: AlbumViewProps) {
                 <div className="space-y-8">
                   {myPhotos.length > 0 && (
                     <div>
-                      <h3 className="font-heading text-lg text-[var(--text-primary)] mb-3">Your Captured Moments</h3>
+                      <h3 className="font-heading text-lg text-[var(--text-primary)] mb-3">{t.albumView.yourMoments}</h3>
                       <div className="grid grid-cols-2 gap-2">
                         {myPhotos.map((photo) => {
                           const index = visiblePhotos.findIndex(p => p.id === photo.id);
@@ -609,7 +593,7 @@ export function AlbumView(props: AlbumViewProps) {
                         <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
                           <IconUsers className="h-2.5 w-2.5 text-white" />
                         </div>
-                        <p className="text-[10px] font-medium text-white truncate">Taken by {photo.guest_name}</p>
+                        <p className="text-[10px] font-medium text-white truncate">{t.albumView.takenBy(photo.guest_name)}</p>
                       </div>
                     </div>
                   </button>
@@ -633,7 +617,7 @@ export function AlbumView(props: AlbumViewProps) {
                       onClick={() => handleToggle(photo)}
                       disabled={togglingId === photo.id}
                       className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
-                      title={photo.is_hidden ? 'Show photo' : 'Hide photo'}
+                      title={photo.is_hidden ? t.albumView.unhide : t.albumView.hide}
                     >
                       {togglingId === photo.id ? (
                         <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -653,7 +637,7 @@ export function AlbumView(props: AlbumViewProps) {
                     <button
                       onClick={() => setPhotoToDelete(photo)}
                       className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                      title="Delete photo"
+                      title={t.deleteModal.title}
                     >
                       <IconTrash className="w-4 h-4" />
                     </button>
@@ -691,7 +675,7 @@ export function AlbumView(props: AlbumViewProps) {
                         <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
                           <IconUsers className="h-2.5 w-2.5 text-white" />
                         </div>
-                        <p className="text-[10px] font-medium text-white truncate">Taken by {photo.guest_name}</p>
+                        <p className="text-[10px] font-medium text-white truncate">{t.albumView.takenBy(photo.guest_name)}</p>
                       </div>
                     </div>
                   </button>
@@ -715,7 +699,7 @@ export function AlbumView(props: AlbumViewProps) {
                       onClick={() => handleToggle(photo)}
                       disabled={togglingId === photo.id}
                       className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
-                      title={photo.is_hidden ? 'Show photo' : 'Hide photo'}
+                      title={photo.is_hidden ? t.albumView.unhide : t.albumView.hide}
                     >
                       {togglingId === photo.id ? (
                         <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -735,7 +719,7 @@ export function AlbumView(props: AlbumViewProps) {
                     <button
                       onClick={() => setPhotoToDelete(photo)}
                       className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                      title="Delete photo"
+                      title={t.deleteModal.title}
                     >
                       <IconTrash className="w-4 h-4" />
                     </button>
@@ -754,7 +738,7 @@ export function AlbumView(props: AlbumViewProps) {
                         </svg>
                         <h3 className="font-heading text-lg text-[var(--text-primary)] leading-none">{guestName}</h3>
                         <span className="text-xs font-medium bg-[var(--bg-tertiary)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full ml-1">
-                          {groupPhotos.length} {groupPhotos.length === 1 ? 'Moment' : 'Moments'}
+                          {t.albumView.moment(groupPhotos.length)}
                         </span>
                         {role === 'host' && (
                           <button
@@ -765,7 +749,7 @@ export function AlbumView(props: AlbumViewProps) {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                               <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
                             </svg>
-                            {downloadingContributor === guestName ? 'Preparing...' : 'Download'}
+                            {downloadingContributor === guestName ? t.albumView.preparingDownload : t.albumView.download}
                           </button>
                         )}
                       </div>
@@ -795,7 +779,7 @@ export function AlbumView(props: AlbumViewProps) {
                         <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
                           <IconUsers className="h-2.5 w-2.5 text-white" />
                         </div>
-                        <p className="text-[10px] font-medium text-white truncate">Taken by {photo.guest_name}</p>
+                        <p className="text-[10px] font-medium text-white truncate">{t.albumView.takenBy(photo.guest_name)}</p>
                       </div>
                     </div>
                   </button>
@@ -819,7 +803,7 @@ export function AlbumView(props: AlbumViewProps) {
                       onClick={() => handleToggle(photo)}
                       disabled={togglingId === photo.id}
                       className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
-                      title={photo.is_hidden ? 'Show photo' : 'Hide photo'}
+                      title={photo.is_hidden ? t.albumView.unhide : t.albumView.hide}
                     >
                       {togglingId === photo.id ? (
                         <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -839,7 +823,7 @@ export function AlbumView(props: AlbumViewProps) {
                     <button
                       onClick={() => setPhotoToDelete(photo)}
                       className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                      title="Delete photo"
+                      title={t.deleteModal.title}
                     >
                       <IconTrash className="w-4 h-4" />
                     </button>
@@ -860,7 +844,7 @@ export function AlbumView(props: AlbumViewProps) {
         {/* ── Footer ── */}
         <div className="mt-12 flex items-end justify-between gap-4">
           <p className="text-xs text-[var(--text-muted)] italic leading-relaxed max-w-[200px]">
-            Every photo you share becomes part of our beautiful story.
+            {t.albumView.footer}
           </p>
           <IconHeart className="h-5 w-5 text-[var(--text-muted)] flex-shrink-0" />
         </div>
@@ -884,12 +868,10 @@ export function AlbumView(props: AlbumViewProps) {
       {/* ── Publish Confirmation Modal ── */}
       {showPublishModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-[var(--bg-primary)] p-6 shadow-xl border border-[var(--bg-tertiary)]">
-            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Publish Album?</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">
-              Only visible photos will appear in the public gallery.
-              <br/><br/>
-              Guests will no longer need a PIN to view the published memories.
+          <div className="w-full max-w-sm rounded-2xl bg-[var(--bg-primary)] p-6 shadow-xl border border-[var(--bg-tertiary)] ac-modal-enter">
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">{t.publishModal.title}</h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed whitespace-pre-line">
+              {t.publishModal.body}
             </p>
             <div className="flex gap-3">
               <button
@@ -897,14 +879,14 @@ export function AlbumView(props: AlbumViewProps) {
                 disabled={isPublishing}
                 className="flex-1 rounded-lg border border-[var(--bg-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
               >
-                Cancel
+                {t.publishModal.cancel}
               </button>
               <button
                 onClick={handlePublish}
                 disabled={isPublishing}
                 className="flex-1 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--theme-secondary)] disabled:opacity-50"
               >
-                {isPublishing ? 'Publishing...' : 'Publish Album'}
+                {isPublishing ? t.publishModal.publishing : t.publishModal.confirm}
               </button>
             </div>
           </div>
@@ -914,13 +896,13 @@ export function AlbumView(props: AlbumViewProps) {
       {/* ── Guest Delete Modal ── */}
       {photoToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-[var(--bg-primary)] p-6 shadow-xl text-center border border-[var(--bg-tertiary)]">
+          <div className="w-full max-w-sm rounded-2xl bg-[var(--bg-primary)] p-6 shadow-xl text-center border border-[var(--bg-tertiary)] ac-modal-enter">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
               <IconTrash className="h-6 w-6 text-[var(--theme-primary)]" />
             </div>
-            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Delete this moment?</h3>
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">{t.deleteModal.title}</h3>
             <p className="text-sm text-[var(--text-secondary)] mb-6">
-              This action cannot be undone.
+              {t.deleteModal.body}
             </p>
             <div className="flex gap-3">
               <button
@@ -928,14 +910,14 @@ export function AlbumView(props: AlbumViewProps) {
                 disabled={isDeleting}
                 className="flex-1 rounded-lg border border-[var(--bg-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
               >
-                Cancel
+                {t.deleteModal.cancel}
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
                 className="flex-1 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--theme-secondary)] disabled:opacity-50"
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? t.deleteModal.removing : t.deleteModal.confirm}
               </button>
             </div>
           </div>
@@ -947,7 +929,7 @@ export function AlbumView(props: AlbumViewProps) {
         <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center px-4 animate-in slide-in-from-bottom-10 fade-in duration-300">
           <div className="flex items-center gap-2 rounded-2xl bg-[var(--text-primary)] p-2 shadow-2xl backdrop-blur-md">
             <div className="px-3 py-1">
-              <span className="text-sm font-medium text-white">{selectedPhotoIds.size} selected</span>
+              <span className="text-sm font-medium text-white">{t.modBar.selected(selectedPhotoIds.size)}</span>
             </div>
             <div className="h-8 w-px bg-white/20 mx-1"></div>
             <button
@@ -955,19 +937,19 @@ export function AlbumView(props: AlbumViewProps) {
               className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors"
             >
               <IconEyeOff className="h-4 w-4" />
-              Hide
+              {t.modBar.hide}
             </button>
             <button
               onClick={handleBulkUnhide}
               className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors"
             >
               <IconEye className="h-4 w-4" />
-              Unhide
+              {t.modBar.show}
             </button>
             <button
               onClick={clearSelection}
               className="ml-1 rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
-              aria-label="Cancel"
+              aria-label={t.albumView.cancelSelect}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
                 <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />

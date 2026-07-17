@@ -111,15 +111,15 @@ export default async function EventPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-secondary)] flex flex-col items-center py-12 px-4">
+      <div className="w-full max-w-lg bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--bg-tertiary)] overflow-hidden">
         {/* ── Event header ── */}
-        <div className="p-8 text-center border-b border-gray-100">
-          <span className="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider text-gray-500 uppercase bg-gray-100 rounded-full">
+        <div className="p-8 text-center border-b border-[var(--bg-tertiary)]">
+          <span className="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider text-[var(--theme-primary)] uppercase bg-[var(--theme-primary)]/10 rounded-full">
             {event.event_type}
           </span>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{event.name}</h1>
-          <p className="mt-4 text-gray-500">
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">{event.name}</h1>
+          <p className="mt-4 text-[var(--text-secondary)]">
             Welcome, {contributor.display_name}! We are so excited to celebrate with you.
           </p>
         </div>

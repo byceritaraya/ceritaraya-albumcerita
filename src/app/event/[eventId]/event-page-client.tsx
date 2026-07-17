@@ -32,7 +32,7 @@ export function EventPageClient({
   return (
     <>
       {/* ── Upload / Queue section ── */}
-      <div className="p-6 bg-gray-50 border-b border-gray-100">
+      <div className="p-6 bg-[var(--bg-primary)] border-b border-[var(--bg-tertiary)]">
         <UploadForm
           eventId={eventId}
           photosUsed={photosUsed}

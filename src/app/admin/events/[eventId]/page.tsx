@@ -6,24 +6,12 @@ import { decodePinFlash, PIN_FLASH_COOKIE } from '@/lib/pin-flash';
 import { PinBanner } from './pin-banner';
 import { AccessCard } from './access-cards';
 import { EditEventForm } from './edit-event-form';
+import { getT } from '@/lib/i18n/server';
+import { LangSwitcher } from '@/app/_components/lang-switcher';
 
 type EventState = 'draft' | 'published' | 'expired' | 'archived';
 
-interface Event {
-  id: string;
-  event_id: string;
-  name: string;
-  state: EventState;
-  created_at: string;
-  retention_months: number;
-  max_contributors: number;
-  photos_per_guest: number;
-  host_slug?: string;
-  guest_slug?: string;
-  host_name?: string;
-  theme?: string;
-  cover_image_url?: string;
-}
+
 
 const STATE_STYLES: Record<EventState, string> = {
   draft: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
@@ -73,6 +61,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
   const flashData = decodePinFlash(flashRaw, eventId);
 
   const supabase = createServiceClient();
+  const t = await getT();
 
   const { data: e, error } = await supabase
     .from('events')
@@ -101,16 +90,20 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-10">
+    <div className="min-h-screen bg-gray-50 px-6 py-10 relative">
+      <div className="absolute top-6 right-6">
+        <LangSwitcher variant="inline" className="border-gray-200" />
+      </div>
+
       {/* One-time PIN banner — only rendered right after creation or legacy PIN reset */}
       {flashData && flashData.pin && (
         <PinBanner eventId={e.event_id} pin={flashData.pin} isReset={flashData.isReset} />
       )}
       
       {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-2 text-sm text-gray-400">
+      <nav className="mb-6 mt-6 flex items-center gap-2 text-sm text-gray-400">
         <Link href="/admin/events" className="hover:text-gray-600 transition-colors">
-          Events
+          {t.adminEventDetail.eventsBreadcrumb}
         </Link>
         <span>/</span>
         <span className="text-gray-700 font-medium">{e.name}</span>
@@ -137,7 +130,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
           <div className="space-y-4">
             <AccessCard 
               eventId={e.event_id}
-              title="Guest Access" 
+              title={t.adminEventDetail.guestAccess}
               type="guest"
               slug={e.slug} 
               pin={flashData?.guestPin} 
@@ -145,7 +138,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
             />
             <AccessCard 
               eventId={e.event_id}
-              title="Host Access" 
+              title={t.adminEventDetail.hostAccess}
               type="host"
               slug={e.slug} 
               pin={flashData?.hostPin} 
@@ -157,27 +150,27 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
         {/* Publish Status */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-            Album Status
+            {t.adminEventDetail.albumStatus}
           </h2>
           <div className="flex items-center gap-2 mb-2">
             <span className={`h-2.5 w-2.5 rounded-full ${e.is_published ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-            <span className="font-semibold text-gray-900">{e.is_published ? 'Published' : 'Draft'}</span>
+            <span className="font-semibold text-gray-900">{e.is_published ? t.adminEventDetail.statusPublished : t.adminEventDetail.statusDraft}</span>
           </div>
           {e.is_published ? (
             <div className="mt-3">
-              <p className="text-xs text-gray-500 mb-1">Public Album Link</p>
+              <p className="text-xs text-gray-500 mb-1">{t.adminEventDetail.publicLink}</p>
               <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                 <span className="text-sm font-mono text-gray-800 break-all mr-3">
                   {baseUrl}/album/{e.slug}
                 </span>
               </div>
               <p className="text-xs text-gray-400 mt-2">
-                The album is currently visible to the public. Only the Host can publish or unpublish albums.
+                {t.adminEventDetail.publicHelper}
               </p>
             </div>
           ) : (
             <p className="text-sm text-gray-500 mt-1">
-              This album is only visible to the Host and Guests with a PIN. The Host can publish it from their dashboard.
+              {t.adminEventDetail.draftHelper}
             </p>
           )}
         </div>
@@ -186,7 +179,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Event Configuration
+              {t.adminEventDetail.eventConfig}
             </h2>
           </div>
           <div className="px-6 py-4">
@@ -208,19 +201,19 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
         {/* Read-only details */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">System Information</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">{t.adminEventDetail.sysInfo}</h2>
           </div>
           <dl className="px-6 divide-y divide-gray-100">
-            <FieldRow label="Legacy Event ID" value={<span className="font-mono text-xs">{e.event_id}</span>} />
+            <FieldRow label={t.adminEventDetail.legacyEventId} value={<span className="font-mono text-xs">{e.event_id}</span>} />
             <FieldRow
-              label="State"
+              label={t.adminEventDetail.state}
               value={
                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATE_STYLES[e.state as keyof typeof STATE_STYLES] ?? 'bg-gray-100 text-gray-600'}`}>
                   {e.state as string}
                 </span>
               }
             />
-            <FieldRow label="Created" value={formatDate(e.created_at)} />
+            <FieldRow label={t.adminEventDetail.created} value={formatDate(e.created_at)} />
           </dl>
         </div>
       </div>

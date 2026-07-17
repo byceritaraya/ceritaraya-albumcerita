@@ -4,10 +4,13 @@ import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { createEvent, type CreateEventState } from './actions';
+import { useT } from '@/lib/i18n/use-t';
+import { LangSwitcher } from '@/app/_components/lang-switcher';
 
 // ── Submit button — reads pending state from the nearest form ────────────────
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const { t } = useT();
   return (
     <button
       type="submit"
@@ -38,7 +41,7 @@ function SubmitButton() {
           />
         </svg>
       )}
-      {pending ? 'Creating event…' : 'Create Event'}
+      {pending ? t.adminNewEvent.creatingBtn : t.adminNewEvent.createBtn}
     </button>
   );
 }
@@ -74,23 +77,27 @@ const initialState: CreateEventState = {};
 
 export default function NewEventPage() {
   const [state, formAction] = useActionState(createEvent, initialState);
+  const { t } = useT();
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-10">
+    <div className="min-h-screen bg-gray-50 px-6 py-10 relative">
+      <div className="absolute top-6 right-6">
+        <LangSwitcher variant="inline" className="border-gray-200" />
+      </div>
       {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-2 text-sm text-gray-400">
+      <nav className="mb-6 mt-6 flex items-center gap-2 text-sm text-gray-400">
         <Link href="/admin/events" className="hover:text-gray-600 transition-colors">
-          Events
+          {t.adminEventDetail.eventsBreadcrumb}
         </Link>
         <span>/</span>
-        <span className="text-gray-700 font-medium">New Event</span>
+        <span className="text-gray-700 font-medium">{t.adminNewEvent.title}</span>
       </nav>
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Create Event</h1>
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t.adminNewEvent.title}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Fill in the details below. A human-readable slug, Event ID, and PINs will be generated automatically.
+          {t.adminNewEvent.subtitle}
         </p>
       </div>
 
@@ -98,7 +105,7 @@ export default function NewEventPage() {
       <div className="mx-auto max-w-lg rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Event Details
+            {t.adminNewEvent.eventDetails}
           </h2>
         </div>
 
@@ -109,24 +116,24 @@ export default function NewEventPage() {
               role="alert"
               className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
             >
-              <span className="font-medium">Error:</span> {state.error}
+              <span className="font-medium">{t.adminNewEvent.error}</span> {state.error}
             </div>
           )}
 
           {/* Event Name */}
-          <Field label="Event Name" htmlFor="name">
+          <Field label={t.adminNewEvent.eventName} htmlFor="name">
             <input
               id="name"
               name="name"
               type="text"
               required
-              placeholder="e.g. Pernikahan Budi & Ani"
+              placeholder={t.adminNewEvent.eventNamePlaceholder}
               className={inputClass}
             />
           </Field>
 
           {/* Event Date — required for slug generation (ddMMyy suffix) */}
-          <Field label="Event Date" htmlFor="event_date">
+          <Field label={t.adminNewEvent.eventDate} htmlFor="event_date">
             <input
               id="event_date"
               name="event_date"
@@ -135,39 +142,39 @@ export default function NewEventPage() {
               className={inputClass}
             />
             <p className="text-xs text-gray-400">
-              Used to generate the event slug, e.g.{' '}
+              {t.adminNewEvent.eventDateHelper}{' '}
               <span className="font-mono">budi-ari-wedding-250226</span>
             </p>
           </Field>
 
           {/* Host Name */}
-          <Field label="Host Name (Optional)" htmlFor="host_name">
+          <Field label={t.adminNewEvent.hostName} htmlFor="host_name">
             <input
               id="host_name"
               name="host_name"
               type="text"
-              placeholder="e.g. Budi & Ani"
+              placeholder={t.adminNewEvent.hostNamePlaceholder}
               className={inputClass}
             />
           </Field>
 
           {/* Event Type */}
-          <Field label="Event Type" htmlFor="event_type">
+          <Field label={t.adminNewEvent.eventType} htmlFor="event_type">
             <select
               id="event_type"
               name="event_type"
               defaultValue="wedding"
               className={selectClass}
             >
-              <option value="wedding">Wedding</option>
-              <option value="birthday">Birthday</option>
-              <option value="corporate">Corporate</option>
-              <option value="other">Other</option>
+              <option value="wedding">{t.adminNewEvent.types.wedding}</option>
+              <option value="birthday">{t.adminNewEvent.types.birthday}</option>
+              <option value="corporate">{t.adminNewEvent.types.corporate}</option>
+              <option value="other">{t.adminNewEvent.types.other}</option>
             </select>
           </Field>
 
           {/* Theme */}
-          <Field label="Theme (Optional)" htmlFor="theme">
+          <Field label={t.adminNewEvent.theme} htmlFor="theme">
             <select
               id="theme"
               name="theme"
@@ -184,22 +191,22 @@ export default function NewEventPage() {
           </Field>
 
           {/* Retention Months */}
-          <Field label="Retention" htmlFor="retention_months">
+          <Field label={t.adminNewEvent.retention} htmlFor="retention_months">
             <select
               id="retention_months"
               name="retention_months"
               defaultValue="3"
               className={selectClass}
             >
-              <option value="1">1 month</option>
-              <option value="3">3 months</option>
-              <option value="6">6 months</option>
-              <option value="12">12 months</option>
+              <option value="1">{t.adminEditEvent.months(1)}</option>
+              <option value="3">{t.adminEditEvent.months(3)}</option>
+              <option value="6">{t.adminEditEvent.months(6)}</option>
+              <option value="12">{t.adminEditEvent.months(12)}</option>
             </select>
           </Field>
 
           {/* Max Contributors */}
-          <Field label="Max Contributors" htmlFor="max_contributors">
+          <Field label={t.adminNewEvent.maxContributors} htmlFor="max_contributors">
             <select
               id="max_contributors"
               name="max_contributors"
@@ -209,12 +216,12 @@ export default function NewEventPage() {
               <option value="20">20</option>
               <option value="50">50</option>
               <option value="100">100</option>
-              <option value="9999">Unlimited</option>
+              <option value="9999">{t.adminEditEvent.unlimited}</option>
             </select>
           </Field>
 
           {/* Photos Per Guest */}
-          <Field label="Photos Per Guest" htmlFor="photos_per_guest">
+          <Field label={t.adminNewEvent.photosPerGuest} htmlFor="photos_per_guest">
             <select
               id="photos_per_guest"
               name="photos_per_guest"
@@ -235,7 +242,7 @@ export default function NewEventPage() {
               href="/admin/events"
               className="flex w-full items-center justify-center rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t.adminNewEvent.cancel}
             </Link>
           </div>
         </form>

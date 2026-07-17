@@ -2,23 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { clearWelcomeModal } from './actions';
+import { useT } from '@/lib/i18n/use-t';
 
-export function GuestWelcome({ 
-  contributorId, 
-  contributorName, 
-  eventName, 
+export function GuestWelcome({
+  contributorId,
+  contributorName,
+  eventName,
   hostName,
   theme
-}: { 
+}: {
   contributorId: string;
   contributorName: string;
   eventName: string;
   hostName: string;
   theme?: string;
 }) {
+  const { t } = useT();
   const [isOpen, setIsOpen] = useState(true);
 
-  // Prevent background scrolling
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -39,33 +40,30 @@ export function GuestWelcome({
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
   const themeClass = `theme-${safeTheme.toLowerCase()}`;
 
+  const invited = t.guestWelcome.invited(eventName).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  const review = t.guestWelcome.review(hostName).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-[var(--text-primary)]/80 backdrop-blur-sm p-4 ${themeClass}`}>
-      <div className="w-full max-w-md bg-[var(--bg-primary)] rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        <h2 className="font-heading text-3xl text-[var(--text-primary)] mb-4 leading-tight">
-          Hi, {contributorName} 👋
+      <div className="w-full max-w-md bg-[var(--bg-primary)] rounded-3xl p-8 shadow-2xl ac-modal-enter">
+        <h2 className="font-heading text-3xl text-[var(--text-primary)] mb-5 leading-tight">
+          {t.guestWelcome.greeting(contributorName)}
         </h2>
-        
-        <div className="space-y-4 text-[var(--text-secondary)] text-sm leading-relaxed mb-8">
-          <p>
-            You&apos;ve been invited to be a Moment Taker at <strong>{eventName}</strong>.
-          </p>
-          <p>
-            Your photos will help tell the story of this special day from your unique perspective. Capture the moments, share your point of view, and help create memories everyone will cherish.
-          </p>
-          <p>
-            Before sharing, please take a quick look at your photos and keep only the moments you&apos;d be proud to include in the final album. All submitted moments will be curated by <strong>{hostName}</strong> before the album is published.
-          </p>
-          <p className="font-medium text-[var(--text-primary)] pt-2">
-            Give it your best shot. 📸
+
+        <div className="space-y-3 text-[var(--text-secondary)] text-sm leading-relaxed mb-8">
+          <p dangerouslySetInnerHTML={{ __html: invited }} />
+          <p>{t.guestWelcome.role}</p>
+          <p dangerouslySetInnerHTML={{ __html: review }} />
+          <p className="font-medium text-[var(--text-primary)] pt-1">
+            {t.guestWelcome.encouragement}
           </p>
         </div>
 
-        <button 
+        <button
           onClick={handleClose}
-          className="w-full bg-[var(--theme-primary)] text-white font-medium py-3.5 rounded-xl hover:bg-[var(--theme-secondary)] transition-colors"
+          className="flex h-14 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition-all hover:bg-[var(--theme-secondary)] active:scale-[0.97]"
         >
-          Let&apos;s Capture Moments
+          {t.guestWelcome.cta}
         </button>
       </div>
     </div>

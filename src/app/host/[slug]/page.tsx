@@ -72,7 +72,7 @@ export default async function HostPage({ params }: PageProps) {
   }
 
   if (!isAuthenticated) {
-    return <HostAuth slug={slug} eventName={event.name} hostName={event.host_name ?? undefined} theme={event.theme ?? undefined} coverImageUrl={finalCoverUrl} />;
+    return <HostAuth slug={slug} hostName={event.host_name ?? undefined} theme={event.theme ?? undefined} coverImageUrl={finalCoverUrl} />;
   }
 
   // ── Data fetching ──────────────────────────────────────────────────────────

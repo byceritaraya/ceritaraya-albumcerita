@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { clearPinFlash } from './actions';
+import { useT } from '@/lib/i18n/use-t';
 
 interface PinModalProps {
   eventId: string;
@@ -11,6 +12,7 @@ interface PinModalProps {
 
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
+  const { t } = useT();
 
   async function handleCopy() {
     try {
@@ -42,7 +44,7 @@ function CopyButton({ value }: { value: string }) {
               clipRule="evenodd"
             />
           </svg>
-          <span className="text-green-600">Copied</span>
+          <span className="text-green-600">{t.adminPinBanner.copied}</span>
         </>
       ) : (
         <>
@@ -59,7 +61,7 @@ function CopyButton({ value }: { value: string }) {
             />
             <path d="M3 6a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H3Z" />
           </svg>
-          Copy
+          {t.adminPinBanner.copy}
         </>
       )}
     </button>
@@ -76,6 +78,7 @@ function CopyButton({ value }: { value: string }) {
  */
 export function PinBanner({ eventId, pin, isReset }: PinModalProps) {
   const [dismissed, setDismissed] = useState(false);
+  const { t } = useT();
 
   async function handleDismiss() {
     await clearPinFlash();
@@ -93,7 +96,7 @@ export function PinBanner({ eventId, pin, isReset }: PinModalProps) {
       aria-labelledby="pin-modal-title"
     >
       {/* Card */}
-      <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl">
+      <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl ac-modal-enter">
 
         {/* Close button */}
         <button
@@ -134,14 +137,12 @@ export function PinBanner({ eventId, pin, isReset }: PinModalProps) {
             id="pin-modal-title"
             className="text-lg font-bold text-gray-900"
           >
-            {isReset ? 'PIN Reset Successfully' : 'Event Created Successfully'}
+            {isReset ? t.adminPinBanner.resetSuccess : t.adminPinBanner.createSuccess}
           </h2>
 
           {/* Subtitle */}
-          <p className="mt-1.5 text-sm text-gray-500">
-            Save the Event ID and PIN below.
-            <br />
-            You will not be able to see the PIN again.
+          <p className="mt-1.5 text-sm text-gray-500 whitespace-pre-line">
+            {t.adminPinBanner.saveNote}
           </p>
 
           {/* Credential cards */}
@@ -149,7 +150,7 @@ export function PinBanner({ eventId, pin, isReset }: PinModalProps) {
             {/* Event ID card */}
             <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Event ID
+                {t.adminPinBanner.eventId}
               </p>
               <div className="flex items-center justify-between gap-3">
                 <p className="font-mono text-xl font-bold tracking-widest text-gray-900">
@@ -162,7 +163,7 @@ export function PinBanner({ eventId, pin, isReset }: PinModalProps) {
             {/* PIN card */}
             <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                PIN
+                {t.adminPinBanner.pin}
               </p>
               <div className="flex items-center justify-between gap-3">
                 <p className="font-mono text-xl font-bold tracking-widest text-gray-900">
@@ -174,10 +175,8 @@ export function PinBanner({ eventId, pin, isReset }: PinModalProps) {
           </div>
 
           {/* Note */}
-          <p className="mt-4 text-xs text-gray-400">
-            Share the Event ID and PIN with your client securely.
-            <br />
-            Do not store or share the PIN publicly.
+          <p className="mt-4 text-xs text-gray-400 whitespace-pre-line">
+            {t.adminPinBanner.shareNote}
           </p>
 
           {/* Primary action */}
@@ -186,7 +185,7 @@ export function PinBanner({ eventId, pin, isReset }: PinModalProps) {
             onClick={handleDismiss}
             className="mt-6 w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-700 active:bg-gray-800"
           >
-            I&apos;ve Saved This Information
+            {t.adminPinBanner.confirmBtn}
           </button>
         </div>
       </div>

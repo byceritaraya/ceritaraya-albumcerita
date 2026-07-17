@@ -1,7 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
-import Link from 'next/link';
 import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
 import { GuestAuth } from './guest-auth';
 import { GuestWelcome } from './guest-welcome';
