@@ -69,7 +69,7 @@ export function FilmRollDashboard({
           <button
             type="button"
             onClick={onReviewClick}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition-all hover:bg-[var(--theme-secondary)] active:scale-[0.98]"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] active:scale-[0.98]"
           >
             {t.filmRoll.viewFilmRoll}
           </button>
@@ -79,7 +79,7 @@ export function FilmRollDashboard({
           <button
             type="button"
             onClick={onCameraClick}
-            className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition-all hover:bg-[var(--theme-secondary)] active:scale-[0.97]"
+            className="flex h-14 flex-[1.5] items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] active:scale-[0.97]"
           >
             <IconCamera className="h-4 w-4" />
             {t.filmRoll.takePhoto}

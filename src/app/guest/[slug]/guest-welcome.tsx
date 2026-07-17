@@ -44,8 +44,9 @@ export function GuestWelcome({
   const review = t.guestWelcome.review(hostName).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-[var(--text-primary)]/80 backdrop-blur-sm p-4 ${themeClass}`}>
-      <div className="w-full max-w-md bg-[var(--bg-primary)] rounded-3xl p-8 shadow-2xl ac-modal-enter">
+    <div className={`fixed inset-0 z-50 flex items-end justify-center pb-[10dvh] p-6 ${themeClass}`}>
+      <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-primary)] from-20% via-[var(--bg-primary)] via-50% to-transparent pointer-events-none" />
+      <div className="relative w-full max-w-md ac-modal-enter text-center">
         <h2 className="font-heading text-3xl text-[var(--text-primary)] mb-5 leading-tight">
           {t.guestWelcome.greeting(contributorName)}
         </h2>

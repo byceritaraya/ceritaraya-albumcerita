@@ -31,8 +31,8 @@ export default async function EventPage({ params }: PageProps) {
       notFound();
     }
     return (
-      <div className="min-h-screen bg-gray-50 px-6 py-10">
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+      <div className="min-h-screen bg-[var(--bg-primary)] px-6 py-10">
+        <div className="rounded-xl bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 px-4 py-3 text-sm text-[var(--theme-primary)]">
           <span className="font-medium">Error:</span> {error.message}
         </div>
       </div>

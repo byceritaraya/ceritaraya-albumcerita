@@ -33,7 +33,7 @@ export default async function AdminEventsPage() {
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10 relative">
       <div className="absolute top-6 right-6">
-        <LangSwitcher variant="inline" className="border-gray-200" />
+        <LangSwitcher />
       </div>
 
       {/* Header */}

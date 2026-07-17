@@ -15,7 +15,7 @@ function SubmitButton({ text }: { text: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition-all hover:bg-[var(--theme-secondary)] disabled:opacity-50 active:scale-[0.97]"
+      className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] disabled:opacity-50 active:scale-[0.97]"
     >
       {pending ? t.guestAuth.pending : text}
     </button>
@@ -70,8 +70,8 @@ export function GuestAuth({
         <SplashScreen themeClass={themeClass} onDone={handleSplashDone} />
       )}
 
-      {/* Absolute Hero Background */}
-      <div className="absolute top-0 inset-x-0 h-[60dvh] pointer-events-none">
+      {/* ── Cover Hero ── */}
+      <div className="relative w-full h-[50dvh] shrink-0 pointer-events-none">
         {coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
@@ -81,25 +81,25 @@ export function GuestAuth({
         <div
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.20) 40%, rgba(var(--theme-bg-rgb),0.85) 80%, rgba(var(--theme-bg-rgb),1) 100%)'
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(var(--theme-bg-rgb),1) 100%)'
           }}
         />
       </div>
 
       {/* Language switcher */}
-      <div className="relative z-10 flex justify-end px-4 pt-4">
-        <LangSwitcher />
+      <div className="absolute top-4 right-4 z-20">
+        <LangSwitcher variant="dark" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 pt-[20dvh] pb-8">
+      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 pb-8 -mt-16">
         <div className="w-full max-w-sm mx-auto">
           {step === 'pin' ? (
             <div className="text-center space-y-3 mb-8">
               <p className="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase drop-shadow-md">
                 {t.guestAuth.roleLabel}
               </p>
-              <h1 className="font-heading text-3xl text-[var(--text-primary)] leading-tight">
+              <h1 className="font-heading text-3xl text-[var(--text-primary)] leading-tight text-balance">
                 {t.guestAuth.pinTitle(eventName || 'Event')}
               </h1>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">

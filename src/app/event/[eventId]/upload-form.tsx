@@ -5,6 +5,7 @@ import { useFilmRoll } from './film-roll/hooks/use-film-roll';
 import { UnlimitedQueue } from './film-roll/unlimited-queue';
 import { FilmRollDashboard } from './film-roll/film-roll-dashboard';
 import { FilmRollReview } from './film-roll/film-roll-review';
+import { IconCamera } from './film-roll/unlimited-queue';
 
 export interface UploadFormProps {
   eventId: string;
@@ -76,7 +77,9 @@ export function UploadForm(props: UploadFormProps) {
       {filmRoll.captureToast.show && (
         <div className="fixed bottom-24 inset-x-0 flex justify-center z-50 pointer-events-none animate-in slide-in-from-bottom-4 fade-in duration-300">
           <div className="bg-[var(--bg-primary)] border border-[var(--bg-tertiary)] rounded-2xl px-5 py-3 shadow-xl flex items-center gap-3">
-            <span className="text-xl">📸</span>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
+              <IconCamera className="h-5 w-5 text-[var(--theme-primary)]" />
+            </div>
             <div>
               <p className="text-sm font-bold text-[var(--text-primary)]">{t.filmRoll.momentCaptured}</p>
               <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5">

@@ -46,19 +46,19 @@ const id: Translations = {
 
   // ─── Guest Welcome Modal ─────────────────────────────────────────────────────
   guestWelcome: {
-    greeting: (name: string) => `Hai, ${name} 👋`,
+    greeting: (name: string) => `Hai, ${name}`,
     invited: (eventName: string) =>
       `Kamu diundang sebagai Moment Taker di **${eventName}**.`,
     role: `Foto-fotomu akan membantu menceritakan hari istimewa ini dari sudut pandangmu sendiri. Abadikan momennya, bagikan perspektifmu, dan bantu ciptakan kenangan yang tak terlupakan.`,
     review: (hostName: string) =>
       `Sebelum membagikan, cek dulu foto-fotomu dan pilih yang terbaik. **${hostName}** akan mengkurasi semuanya sebelum album dipublikasikan.`,
-    encouragement: `Berikan yang terbaik dari dirimu. 📸`,
+    encouragement: `Berikan yang terbaik dari dirimu.`,
     cta: 'Mulai Mengabadikan',
   },
 
   // ─── Host Welcome Modal ──────────────────────────────────────────────────────
   hostWelcome: {
-    greeting: (hostName: string) => `Selamat datang, ${hostName}.`,
+    greeting: (name: string) => `Selamat datang, ${name}`,
     description: `Di sinilah kenangan dari semua tamumu berkumpul. Kurasi, sembunyikan, dan bagikan momen-momen yang paling berkesan.`,
     cta: 'Buka Albumku',
   },
@@ -84,7 +84,6 @@ const id: Translations = {
 
   // ─── Album View ───────────────────────────────────────────────────────────────
   albumView: {
-    byBrand: 'By AlbumCerita',
     stats: {
       momentTakers: 'Moment Takers',
       moments: 'Momen',
@@ -124,8 +123,8 @@ const id: Translations = {
   // ─── Film Roll ───────────────────────────────────────────────────────────────
   filmRoll: {
     title: 'Rol Film',
-    framesRemaining: (n: number) => `Sisa ${n} Frame`,
-    lastFrame: 'Frame Terakhir',
+    framesRemaining: (n: number) => `${n} Frame Tersisa`,
+    lastFrame: 'Frame Terakhir!',
     rollFull: 'Rol film kamu penuh.',
     momentCaptured: '✓ Momen Terabadikan',
     viewFilmRoll: 'Cuci Rol Film',
@@ -323,9 +322,7 @@ const id: Translations = {
 
   // ─── Language Switcher ───────────────────────────────────────────────────────
   langSwitcher: {
-    label: 'Bahasa',
-    en: '🇺🇸 English',
-    id: '🇮🇩 Bahasa Indonesia',
+    label: 'Ganti bahasa',
   },
 
   // ─── Splash Screen ──────────────────────────────────────────────────────────

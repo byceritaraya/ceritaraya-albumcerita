@@ -370,8 +370,8 @@ export function AlbumView(props: AlbumViewProps) {
   return (
     <div className={`relative min-h-[100dvh] bg-[var(--bg-primary)] ${themeClass}`}>
       {/* ── Top bar ── */}
-      <div className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-5 py-3"
-           style={{ background: 'linear-gradient(to bottom, rgba(var(--theme-bg-rgb),0.85) 0%, rgba(var(--theme-bg-rgb),0.0) 100%)', backdropFilter: 'blur(2px)' }}>
+      <div className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-5 pt-4 pb-12"
+           style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 35%, rgba(255,255,255,0.65) 65%, rgba(255,255,255,0.35) 85%, transparent 100%)' }}>
         <div className="flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 text-[var(--theme-primary)]">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
@@ -379,7 +379,7 @@ export function AlbumView(props: AlbumViewProps) {
           </svg>
         </div>
         <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-          <LangSwitcher variant="inline" className="mr-3" />
+          <LangSwitcher className="mr-3" />
           {role !== 'public' && (
             <>
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
@@ -397,7 +397,7 @@ export function AlbumView(props: AlbumViewProps) {
       </div>
 
       {/* ── Cover Hero ── */}
-      <div className="absolute top-0 inset-x-0 h-[60dvh] pointer-events-none">
+      <div className="relative w-full h-[50dvh] shrink-0 pointer-events-none">
         {coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverImageUrl} alt="Event Cover" className="w-full h-full object-cover" />
@@ -407,25 +407,22 @@ export function AlbumView(props: AlbumViewProps) {
         <div 
           className="absolute inset-0" 
           style={{
-            background: 'linear-gradient(to bottom, rgba(var(--theme-bg-rgb),0.05) 0%, rgba(var(--theme-bg-rgb),0.15) 40%, rgba(var(--theme-bg-rgb),0.88) 80%, rgba(var(--theme-bg-rgb),1) 100%)'
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(var(--theme-bg-rgb),1) 100%)'
           }}
         />
       </div>
 
       {/* ── Content ── */}
-      <div className="relative z-10 px-5 pt-[40dvh] pb-12">
+      <div className="relative z-10 px-5 pb-12 flex-1 -mt-8">
 
         {/* Event title */}
-        <h1 className="font-heading text-3xl leading-tight text-[var(--text-primary)]">
+        <h1 className="font-heading text-4xl leading-none tracking-tight text-[var(--text-primary)] text-balance">
           {eventName}
         </h1>
-        <p className="mt-1 mb-6 text-sm text-[var(--text-muted)]">
-          {t.albumView.byBrand}
-        </p>
 
 
         {/* ── Stats row ── */}
-        <div className={`flex items-center ${role === 'host' ? 'justify-center gap-8' : 'justify-between'} overflow-x-auto py-2 no-scrollbar`}>
+        <div className={`mt-8 flex items-center ${role === 'host' ? 'justify-center gap-8' : 'justify-between'} overflow-x-auto py-2 no-scrollbar`}>
           <StatItem icon={<IconUsers className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalContributors} label={t.albumView.stats.momentTakers} />
           <div className="w-px h-10 bg-[var(--theme-secondary)] opacity-30 self-center" />
           <StatItem icon={<IconImage className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalPhotos} label={t.albumView.stats.moments} />
@@ -457,14 +454,14 @@ export function AlbumView(props: AlbumViewProps) {
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={copyPublicLink}
-                className="flex items-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--theme-secondary)]"
+                className="flex items-center gap-2 rounded-xl bg-[var(--theme-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--theme-secondary)]"
               >
                 {copiedLink ? t.albumView.linkCopied : t.albumView.copyLink}
               </button>
               <button
                 onClick={handleUnpublish}
                 disabled={isPublishing}
-                className="flex items-center gap-2 rounded-lg border border-[var(--bg-tertiary)] bg-white px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
+                className="flex items-center gap-2 rounded-xl border border-[var(--bg-tertiary)] bg-white px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
               >
                 {isPublishing ? t.albumView.saving : t.albumView.unpublish}
               </button>
@@ -478,7 +475,7 @@ export function AlbumView(props: AlbumViewProps) {
             <button
               onClick={handleDownloadAlbum}
               disabled={isDownloading}
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] active:scale-[0.97] disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] active:scale-[0.97] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                 <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
@@ -877,7 +874,7 @@ export function AlbumView(props: AlbumViewProps) {
               <button
                 onClick={() => setShowPublishModal(false)}
                 disabled={isPublishing}
-                className="flex-1 rounded-lg border border-[var(--bg-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
+                className="flex-1 rounded-xl border border-[var(--bg-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
               >
                 {t.publishModal.cancel}
               </button>

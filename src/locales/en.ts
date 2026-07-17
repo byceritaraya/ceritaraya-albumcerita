@@ -44,13 +44,13 @@ const en = {
 
   // ─── Guest Welcome Modal ─────────────────────────────────────────────────────
   guestWelcome: {
-    greeting: (name: string) => `Hi, ${name} 👋`,
+    greeting: (name: string) => `Hi, ${name}`,
     invited: (eventName: string) =>
       `You've been invited as a Moment Taker at **${eventName}**.`,
     role: `Your photos will help tell the story of this day from your own perspective. Capture the moments, share your point of view, and help create memories everyone will treasure.`,
     review: (hostName: string) =>
       `Before sharing, give your photos a quick look and keep only the ones you'd be proud of. **${hostName}** will curate everything before the album goes live.`,
-    encouragement: `Give it your best shot. 📸`,
+    encouragement: `Give it your best shot.`,
     cta: 'Start Capturing',
   },
 
@@ -84,7 +84,6 @@ const en = {
 
   // ─── Album View ───────────────────────────────────────────────────────────────
   albumView: {
-    byBrand: 'By AlbumCerita',
     stats: {
       momentTakers: 'Moment Takers',
       moments: 'Moments',
@@ -125,7 +124,7 @@ const en = {
   filmRoll: {
     title: 'Film Roll',
     framesRemaining: (n: number) => `${n} Frame${n !== 1 ? 's' : ''} Remaining`,
-    lastFrame: 'Last Frame',
+    lastFrame: 'Last Frame!',
     rollFull: 'Your roll is full.',
     momentCaptured: '✓ Moment Captured',
     viewFilmRoll: 'Develop My Film',
@@ -323,9 +322,7 @@ const en = {
 
   // ─── Language Switcher ───────────────────────────────────────────────────────
   langSwitcher: {
-    label: 'Language',
-    en: '🇺🇸 English',
-    id: '🇮🇩 Bahasa Indonesia',
+    label: 'Switch language',
   },
 
   // ─── Splash Screen ──────────────────────────────────────────────────────────

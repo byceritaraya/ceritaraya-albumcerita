@@ -74,10 +74,10 @@ export function FilmRollReview({
               <button
                 type="button"
                 onClick={() => onRetake(index)}
-                className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 text-white backdrop-blur-sm text-xs font-medium border border-white/20 transition hover:bg-black/70 active:scale-95"
+                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white/90 backdrop-blur-sm transition hover:bg-black/50 active:scale-95"
+                aria-label={t.filmRoll.retakeFrame(index + 1)}
               >
-                <IconRefreshCcw className="h-3 w-3" />
-                {t.filmRoll.retakeFrame(index + 1)}
+                <IconRefreshCcw className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
