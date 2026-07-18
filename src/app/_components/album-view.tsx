@@ -456,7 +456,14 @@ export function AlbumView(props: AlbumViewProps) {
                 onClick={copyPublicLink}
                 className="flex items-center gap-2 rounded-xl bg-[var(--theme-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--theme-secondary)]"
               >
-                {copiedLink ? t.albumView.linkCopied : t.albumView.copyLink}
+                {copiedLink ? (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                      <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+                    </svg>
+                    {t.albumView.linkCopied}
+                  </>
+                ) : t.albumView.copyLink}
               </button>
               <button
                 onClick={handleUnpublish}
@@ -485,7 +492,7 @@ export function AlbumView(props: AlbumViewProps) {
           ) : role === 'guest' ? (
             <UploadForm
               eventId={eventId}
-              photosUsed={photosUsed}
+              photosUsed={localPhotosUsed}
               photosPerGuest={photosPerGuest}
               onUploadComplete={handleUploadComplete}
             />
@@ -550,9 +557,10 @@ export function AlbumView(props: AlbumViewProps) {
           {/* Empty state */}
           {visiblePhotos.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <IconCamera className="h-10 w-10 text-[var(--theme-primary)]/30 mb-3" />
-              <p className="text-sm font-medium text-[var(--text-muted)]">{t.albumView.emptyTitle}</p>
-              {role === 'guest' && <p className="text-xs text-[var(--text-muted)] mt-1">{t.albumView.emptyGuest}</p>}
+              <IconCamera className="h-10 w-10 text-[var(--theme-primary)]/25 mb-4" />
+              <p className="text-base font-semibold text-[var(--text-primary)] mb-1">{t.albumView.emptyTitle}</p>
+              {role === 'guest' && <p className="text-sm text-[var(--text-muted)] max-w-[220px] leading-relaxed">{t.albumView.emptyGuest}</p>}
+              {role === 'host' && <p className="text-sm text-[var(--text-muted)] max-w-[220px] leading-relaxed">{t.albumView.emptyHost}</p>}
             </div>
           )}
 
@@ -881,7 +889,7 @@ export function AlbumView(props: AlbumViewProps) {
               <button
                 onClick={handlePublish}
                 disabled={isPublishing}
-                className="flex-1 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--theme-secondary)] disabled:opacity-50"
+                className="flex-1 rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--theme-secondary)] disabled:opacity-50"
               >
                 {isPublishing ? t.publishModal.publishing : t.publishModal.confirm}
               </button>
@@ -905,14 +913,14 @@ export function AlbumView(props: AlbumViewProps) {
               <button
                 onClick={() => setPhotoToDelete(null)}
                 disabled={isDeleting}
-                className="flex-1 rounded-lg border border-[var(--bg-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
+                className="flex-1 rounded-xl border border-[var(--bg-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
               >
                 {t.deleteModal.cancel}
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                className="flex-1 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--theme-secondary)] disabled:opacity-50"
+                className="flex-1 rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--theme-secondary)] disabled:opacity-50"
               >
                 {isDeleting ? t.deleteModal.removing : t.deleteModal.confirm}
               </button>

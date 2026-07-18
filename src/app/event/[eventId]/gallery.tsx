@@ -140,11 +140,11 @@ export function Gallery({ photos, totalPhotos, totalContributors }: GalleryProps
       {/* Empty state */}
       {photos.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--bg-tertiary)] bg-white py-14 text-center">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="mb-3 h-10 w-10 text-[var(--text-muted)]/50">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="mb-4 h-10 w-10 text-[var(--text-muted)]/40">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12zm2.25-4.5h.008v.008H15.75V7.5z" />
           </svg>
-          <p className="text-sm font-medium text-[var(--text-secondary)]">{t.gallery.emptyTitle}</p>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">{t.gallery.emptyBody}</p>
+          <p className="text-base font-semibold text-[var(--text-primary)] mb-1">{t.gallery.emptyTitle}</p>
+          <p className="text-sm text-[var(--text-muted)] max-w-[220px] leading-relaxed">{t.gallery.emptyBody}</p>
         </div>
       )}
 

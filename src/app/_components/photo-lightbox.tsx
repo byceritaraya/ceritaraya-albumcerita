@@ -122,11 +122,11 @@ export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm" 
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-300" 
          onClick={onClose}>
       
       {/* Top Header */}
-      <div className="absolute top-0 inset-x-0 h-16 flex items-center justify-between px-4 bg-gradient-to-b from-black/60 to-transparent z-20" onClick={e => e.stopPropagation()}>
+      <div className="absolute top-0 inset-x-0 h-16 flex items-center justify-between px-4 bg-gradient-to-b from-black/60 to-transparent z-20 animate-in slide-in-from-top-4 fade-in duration-300" onClick={e => e.stopPropagation()}>
         <div className="flex flex-col">
           <span className="text-white font-medium text-sm">{t.lightbox.takenBy(photo.guest_name)}</span>
           <span className="text-white/70 text-xs">{captureDate} · {captureTime}</span>
@@ -174,7 +174,7 @@ export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext
           ref={imgRef}
           src={photo.original_url} 
           alt={`Photo by ${photo.guest_name}`} 
-          className="max-h-[100dvh] max-w-[100dvw] object-contain transition-transform duration-200 ease-out" 
+          className="max-h-[100dvh] max-w-[100dvw] object-contain transition-transform duration-200 ease-out animate-in zoom-in-95 fade-in duration-300" 
           style={{ 
             transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
             cursor: isZoomed ? 'zoom-out' : 'zoom-in'
