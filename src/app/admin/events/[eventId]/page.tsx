@@ -65,9 +65,19 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
 
   const { data: e, error } = await supabase
     .from('events')
-    .select('event_id, name, state, event_type, retention_months, max_contributors, photos_per_guest, slug, host_name, theme, created_at, expires_at, is_published, cover_image_url')
+    .select(`
+      event_id, name, state, event_type, retention_months, max_contributors, 
+      photos_per_guest, slug, host_name, theme, created_at, expires_at, 
+      is_published, cover_image_url, film_recipe_id
+    `)
     .eq('event_id', eventId)
     .single();
+
+  const { data: recipes } = await supabase
+    .from('film_recipes')
+    .select('id, name')
+    .eq('active', true)
+    .order('name');
 
   if (error?.code === 'PGRST116' || (!error && !e)) {
     notFound();
@@ -185,6 +195,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
           <div className="px-6 py-4">
             <EditEventForm
               eventId={e.event_id}
+              availableRecipes={recipes || []}
               initialValues={{
                 name: e.name,
                 host_name: e.host_name ?? '',
@@ -193,6 +204,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
                 max_contributors: e.max_contributors,
                 photos_per_guest: e.photos_per_guest,
                 cover_image_url: finalCoverUrl,
+                film_recipe_id: e.film_recipe_id ?? '',
               }}
             />
           </div>

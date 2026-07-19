@@ -140,6 +140,16 @@ const en = {
     fromGallery: 'From Gallery',
   },
 
+  // ─── Film Processing ────────────────────────────────────────────────────────
+  filmProcessing: {
+    developMyFilm: 'Develop My Film',
+    preparing: 'Preparing Your Film...',
+    developing: 'Developing Negatives...',
+    applying: 'Applying Film Recipe...',
+    finalizing: 'Finalizing...',
+    ready: 'Your Film is Ready ✨',
+  },
+
   // ─── Publish Modal ──────────────────────────────────────────────────────────
   publishModal: {
     title: 'Ready to Share?',

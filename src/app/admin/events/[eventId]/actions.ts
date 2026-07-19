@@ -66,9 +66,11 @@ export async function updateEventAction(
     max_contributors: number;
     photos_per_guest: number;
     cover_image_url: string | null;
+    film_recipe_id: string;
   }
 ): Promise<{ error?: string }> {
   if (!data.name?.trim()) return { error: 'Event name is required.' };
+  if (!data.film_recipe_id?.trim()) return { error: 'Film recipe is required.' };
 
   const supabase = createServiceClient();
   const { error } = await supabase
@@ -81,6 +83,7 @@ export async function updateEventAction(
       max_contributors: data.max_contributors,
       photos_per_guest: data.photos_per_guest,
       cover_image_url: data.cover_image_url,
+      film_recipe_id: data.film_recipe_id,
     })
     .eq('event_id', eventId);
 

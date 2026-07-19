@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect, ChangeEvent, useCallback } from 'react';
-import { uploadPhoto } from '../../actions';
+import { uploadPhoto, developRoll } from '../../actions';
 import { useT } from '@/lib/i18n/use-t';
 import { FilmFrame, GlobalMessage } from '../types';
+import { FilmRecipeSettings } from '@/lib/film/types';
+import { FilmRenderer } from '@/lib/film/FilmRenderer';
 
 export interface UseFilmRollProps {
   eventId: string;
   photosUsed: number;
   photosPerGuest: number;
   onUploadComplete: () => void;
+  filmRecipe?: FilmRecipeSettings | null;
 }
 
 function generateId() {
@@ -19,13 +22,14 @@ export function useFilmRoll({
   photosUsed,
   photosPerGuest,
   onUploadComplete,
+  filmRecipe,
 }: UseFilmRollProps) {
   const { t } = useT();
   const unlimited = photosPerGuest === 0;
 
   const [unlimitedQueue, setUnlimitedQueue] = useState<FilmFrame[]>([]);
   const [frames, setFrames] = useState<FilmFrame[]>([]);
-  const [showReview, setShowReview] = useState(false);
+  const [developmentState, setDevelopmentState] = useState<'idle' | 'review' | 'developing' | 'processed'>('idle');
   const [isUploading, setIsUploading] = useState(false);
   const [globalMessage, setGlobalMessage] = useState<GlobalMessage>(null);
   
@@ -180,31 +184,78 @@ export function useFilmRoll({
 
     const setQueueState = isUnlimitedFlow ? setUnlimitedQueue : setFrames;
 
+    // Phase 1: Pre-process all photos
+    const processedFiles: { frameId: string; file: File }[] = [];
+    let processingFailed = false;
+
     for (const frame of toUpload) {
       setQueueState(prev =>
         prev.map(f => (f.id === frame.id ? { ...f, status: 'uploading', errorMsg: undefined } : f))
       );
 
       try {
+        let fileToUpload = frame.file;
+        if (filmRecipe) {
+          const processedUrl = await FilmRenderer.render(frame.id, frame.previewUrl, filmRecipe);
+          const res = await fetch(processedUrl);
+          const blob = await res.blob();
+          fileToUpload = new File([blob], frame.file.name, { type: 'image/jpeg' });
+        }
+        processedFiles.push({ frameId: frame.id, file: fileToUpload });
+      } catch (renderErr) {
+        console.error('Failed to process photo:', renderErr);
+        processingFailed = true;
+        break;
+      }
+    }
+
+    if (processingFailed) {
+      setQueueState(prev =>
+        prev.map(f => (toUpload.some(u => u.id === f.id) ? { ...f, status: 'error', errorMsg: 'Failed to process film recipe. Development aborted.' } : f))
+      );
+      setGlobalMessage({ type: 'error', text: 'Film processing failed. Development aborted to prevent partial roll.' });
+      setIsUploading(false);
+      return;
+    }
+
+    // Phase 2a: Acquire the server-side development gate (film roll only).
+    // This is an atomic operation: only the first call with roll_developed_at IS NULL
+    // succeeds. Any second attempt — from a replay, duplicate tab, or direct API
+    // call — is rejected here before any photo reaches storage.
+    if (!isUnlimitedFlow) {
+      const gateResult = await developRoll(eventId);
+      if (gateResult.error) {
+        setQueueState(prev =>
+          prev.map(f => (toUpload.some(u => u.id === f.id) ? { ...f, status: 'error', errorMsg: gateResult.error } : f))
+        );
+        setGlobalMessage({ type: 'error', text: gateResult.error });
+        setIsUploading(false);
+        return;
+      }
+    }
+
+    // Phase 2b: Upload all processed photos
+    for (const { frameId, file } of processedFiles) {
+      try {
         const formData = new FormData();
-        formData.append('photo', frame.file);
+        formData.append('photo', file);
         const result = await uploadPhoto(eventId, {}, formData);
 
         if (result.error) {
           setQueueState(prev =>
-            prev.map(f => (f.id === frame.id ? { ...f, status: 'error', errorMsg: result.error } : f))
+            prev.map(f => (f.id === frameId ? { ...f, status: 'error', errorMsg: result.error } : f))
           );
           failCount++;
         } else {
           setQueueState(prev =>
-            prev.map(f => (f.id === frame.id ? { ...f, status: 'done' } : f))
+            prev.map(f => (f.id === frameId ? { ...f, status: 'done' } : f))
           );
           successCount++;
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : t.upload.uploadError;
         setQueueState(prev =>
-          prev.map(f => (f.id === frame.id ? { ...f, status: 'error', errorMsg: msg } : f))
+          prev.map(f => (f.id === frameId ? { ...f, status: 'error', errorMsg: msg } : f))
         );
         failCount++;
       }
@@ -228,8 +279,10 @@ export function useFilmRoll({
         setTimeout(() => {
           setGlobalMessage(null);
           if (!isUnlimitedFlow) {
+            frames.forEach(f => URL.revokeObjectURL(f.previewUrl));
             setFrames([]);
-            setShowReview(false);
+            FilmRenderer.clearCache();
+            setDevelopmentState('idle');
           }
           onUploadComplete();
         }, 1500);
@@ -245,8 +298,8 @@ export function useFilmRoll({
     unlimited,
     unlimitedQueue,
     frames,
-    showReview,
-    setShowReview,
+    developmentState,
+    setDevelopmentState,
     isUploading,
     globalMessage,
     captureToast,

@@ -18,10 +18,12 @@ interface EditEventFormProps {
     max_contributors: number;
     photos_per_guest: number;
     cover_image_url: string | null;
+    film_recipe_id: string;
   };
+  availableRecipes: { id: string; name: string }[];
 }
 
-export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
+export function EditEventForm({ eventId, initialValues, availableRecipes }: EditEventFormProps) {
   const [values, setValues] = useState(initialValues);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(initialValues.cover_image_url);
@@ -176,6 +178,18 @@ export function EditEventForm({ eventId, initialValues }: EditEventFormProps) {
             className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 transition"
           >
             {THEMES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+
+        {/* Film Recipe */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">Film Recipe</label>
+          <select
+            value={values.film_recipe_id}
+            onChange={e => handleChange('film_recipe_id', e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 transition"
+          >
+            {availableRecipes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         </div>
 

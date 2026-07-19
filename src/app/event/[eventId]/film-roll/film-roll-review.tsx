@@ -1,25 +1,35 @@
 import { useT } from '@/lib/i18n/use-t';
 import { FilmFrame, GlobalMessage } from './types';
 import { IconFilmRoll, IconSpinner, IconCheck, IconRefreshCcw, IconUpload } from './unlimited-queue';
+import { FilmImage } from '@/lib/film/FilmImage';
+import { FilmRecipeSettings } from '@/lib/film/types';
 
 interface FilmRollReviewProps {
   frames: FilmFrame[];
+  developmentState: 'idle' | 'review' | 'developing' | 'processed';
   isUploading: boolean;
   globalMessage: GlobalMessage;
   retakeJustCompleted: number | null;
   onRetake: (index: number) => void;
   onUploadBatch: () => void;
+  onDevelop: () => void;
+  filmRecipe?: FilmRecipeSettings | null;
 }
 
 export function FilmRollReview({
   frames,
+  developmentState,
   isUploading,
   globalMessage,
   retakeJustCompleted,
   onRetake,
   onUploadBatch,
+  onDevelop,
+  filmRecipe,
 }: FilmRollReviewProps) {
   const { t } = useT();
+
+  const isProcessed = developmentState === 'processed';
 
   return (
     <div className="flex flex-col gap-6">
@@ -40,8 +50,18 @@ export function FilmRollReview({
       <div className="grid grid-cols-2 gap-3">
         {frames.map((frame, index) => (
           <div key={frame.id} className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-[var(--bg-tertiary)] border border-[var(--bg-tertiary)] group">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={frame.previewUrl} alt={`Frame ${index + 1}`} className="h-full w-full object-cover" />
+            {isProcessed ? (
+              <FilmImage
+                photoId={frame.id}
+                src={frame.previewUrl}
+                recipeSettings={filmRecipe}
+                alt={`Frame ${index + 1}`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={frame.previewUrl} alt={`Frame ${index + 1}`} className="h-full w-full object-cover" />
+            )}
             
             {/* Retake ✓ animation if just retaken */}
             {retakeJustCompleted === index && (
@@ -69,8 +89,8 @@ export function FilmRollReview({
               </div>
             )}
 
-            {/* Retake Button (only if not uploading/done) */}
-            {(frame.status === 'queued' || frame.status === 'error') && !isUploading && (
+            {/* Retake Button (only if not uploading/done and not processed) */}
+            {(frame.status === 'queued' || frame.status === 'error') && !isUploading && !isProcessed && (
               <button
                 type="button"
                 onClick={() => onRetake(index)}
@@ -85,18 +105,29 @@ export function FilmRollReview({
       </div>
 
       <div className="pt-2">
-        <button
-          type="button"
-          onClick={onUploadBatch}
-          disabled={isUploading}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
-        >
-          {isUploading ? (
-            <><IconSpinner className="h-4 w-4 animate-spin" /> {t.filmRoll.sharingRoll}</>
-          ) : (
-            <><IconUpload className="h-4 w-4" /> {t.filmRoll.shareRoll}</>
-          )}
-        </button>
+        {isProcessed ? (
+          <button
+            type="button"
+            onClick={onUploadBatch}
+            disabled={isUploading}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+          >
+            {isUploading ? (
+              <><IconSpinner className="h-4 w-4 animate-spin" /> {t.filmRoll.sharingRoll}</>
+            ) : (
+              <><IconUpload className="h-4 w-4" /> {t.filmRoll.shareRoll}</>
+            )}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onDevelop}
+            disabled={isUploading}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+          >
+            {t.filmProcessing.developMyFilm}
+          </button>
+        )}
       </div>
     </div>
   );

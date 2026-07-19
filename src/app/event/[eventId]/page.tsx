@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
 import { type GalleryPhoto } from './gallery';
 import { EventPageClient } from './event-page-client';
+import { type FilmRecipeSettings } from '@/lib/film/types';
 
 interface PageProps {
   params: Promise<{ eventId: string }>;
@@ -22,7 +23,18 @@ export default async function EventPage({ params }: PageProps) {
 
   const { data: event, error } = await supabase
     .from('events')
-    .select('id, event_id, name, event_type, photos_per_guest')
+    .select(`
+      id, 
+      event_id, 
+      name, 
+      event_type, 
+      photos_per_guest,
+      cover_image_url,
+      theme,
+      film_recipes (
+        settings
+      )
+    `)
     .eq('event_id', eventId)
     .single();
 
@@ -132,6 +144,9 @@ export default async function EventPage({ params }: PageProps) {
           galleryPhotos={galleryPhotos}
           totalPhotos={totalPhotos ?? 0}
           totalContributors={totalContributors ?? 0}
+          filmRecipe={(event.film_recipes as unknown as { settings: FilmRecipeSettings } | null)?.settings ?? null}
+          coverImageUrl={event.cover_image_url ?? undefined}
+          theme={event.theme ?? undefined}
         />
       </div>
     </div>

@@ -5,6 +5,9 @@ import { useFilmRoll } from './film-roll/hooks/use-film-roll';
 import { UnlimitedQueue } from './film-roll/unlimited-queue';
 import { FilmRollDashboard } from './film-roll/film-roll-dashboard';
 import { FilmRollReview } from './film-roll/film-roll-review';
+import { FilmRecipeSettings } from '@/lib/film/types';
+import { FilmRenderer } from '@/lib/film/FilmRenderer';
+import { FilmProcessing } from './film-roll/film-processing';
 import { IconCamera } from './film-roll/unlimited-queue';
 
 export interface UploadFormProps {
@@ -12,6 +15,9 @@ export interface UploadFormProps {
   photosUsed: number;
   photosPerGuest: number;
   onUploadComplete: () => void;
+  filmRecipe?: FilmRecipeSettings | null;
+  coverImageUrl?: string;
+  theme?: string;
 }
 
 export function UploadForm(props: UploadFormProps) {
@@ -30,15 +36,35 @@ export function UploadForm(props: UploadFormProps) {
             onUploadBatch={() => filmRoll.handleUploadBatch(true)}
             onCameraClick={() => filmRoll.cameraInputRef.current?.click()}
             onGalleryClick={() => filmRoll.galleryInputRef.current?.click()}
+            filmRecipe={props.filmRecipe}
           />
-        ) : filmRoll.showReview ? (
+        ) : filmRoll.developmentState === 'developing' ? (
+          <FilmProcessing
+            onComplete={() => filmRoll.setDevelopmentState('processed')}
+            coverImageUrl={props.coverImageUrl}
+            theme={props.theme}
+          />
+        ) : filmRoll.developmentState === 'review' || filmRoll.developmentState === 'processed' ? (
           <FilmRollReview
             frames={filmRoll.frames}
+            developmentState={filmRoll.developmentState}
             isUploading={filmRoll.isUploading}
             globalMessage={filmRoll.globalMessage}
             retakeJustCompleted={filmRoll.retakeJustCompleted}
             onRetake={filmRoll.triggerRetake}
             onUploadBatch={() => filmRoll.handleUploadBatch(false)}
+            onDevelop={() => {
+              // Start rendering immediately — in parallel with the animation.
+              // When FilmProcessing completes and FilmRollReview mounts,
+              // FilmImage will find the results already in cache.
+              if (props.filmRecipe) {
+                filmRoll.frames.forEach(f =>
+                  FilmRenderer.preload(f.id, f.previewUrl, props.filmRecipe!)
+                );
+              }
+              filmRoll.setDevelopmentState('developing');
+            }}
+            filmRecipe={props.filmRecipe}
           />
         ) : (
           <FilmRollDashboard
@@ -48,7 +74,7 @@ export function UploadForm(props: UploadFormProps) {
             percent={Math.min(100, Math.max(0, ((props.photosUsed + filmRoll.activeFrames) / props.photosPerGuest) * 100))}
             onCameraClick={() => filmRoll.cameraInputRef.current?.click()}
             onGalleryClick={() => filmRoll.galleryInputRef.current?.click()}
-            onReviewClick={() => filmRoll.setShowReview(true)}
+            onReviewClick={() => filmRoll.setDevelopmentState('review')}
           />
         )}
       </div>

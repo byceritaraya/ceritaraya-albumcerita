@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import type { AlbumPhoto } from '@/app/_components/album-view';
 import { useT } from '@/lib/i18n/use-t';
+import { FilmRecipeSettings } from '@/lib/film/types';
+import { FilmImage } from '@/lib/film/FilmImage';
 
 export interface PhotoLightboxProps {
   photo: AlbumPhoto;
@@ -13,9 +15,10 @@ export interface PhotoLightboxProps {
   hasNext: boolean;
   eventName: string;
   photoNumber: number;
+  filmRecipe?: FilmRecipeSettings | null;
 }
 
-export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext, eventName, photoNumber }: PhotoLightboxProps) {
+export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext, eventName, photoNumber, filmRecipe }: PhotoLightboxProps) {
   const { t } = useT();
 
   // Swipe detection
@@ -169,19 +172,35 @@ export function PhotoLightbox({ photo, onClose, onPrev, onNext, hasPrev, hasNext
         onTouchEnd={onTouchEnd}
         onDoubleClick={toggleZoom}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img 
-          ref={imgRef}
-          src={photo.original_url} 
-          alt={`Photo by ${photo.guest_name}`} 
-          className="max-h-[100dvh] max-w-[100dvw] object-contain transition-transform duration-200 ease-out animate-in zoom-in-95 fade-in duration-300" 
-          style={{ 
-            transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
-            cursor: isZoomed ? 'zoom-out' : 'zoom-in'
-          }}
-          onClick={toggleZoom}
-          draggable={false}
-        />
+        {filmRecipe ? (
+          <FilmImage
+            photoId={photo.id}
+            src={photo.original_url}
+            recipeSettings={filmRecipe}
+            alt={`Photo by ${photo.guest_name}`}
+            className="max-h-[100dvh] max-w-[100dvw] object-contain transition-transform duration-200 ease-out animate-in zoom-in-95 fade-in duration-300"
+            style={{ 
+              transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+              cursor: isZoomed ? 'zoom-out' : 'zoom-in'
+            }}
+            onClick={toggleZoom}
+            draggable={false}
+          />
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img 
+            ref={imgRef}
+            src={photo.original_url} 
+            alt={`Photo by ${photo.guest_name}`} 
+            className="max-h-[100dvh] max-w-[100dvw] object-contain transition-transform duration-200 ease-out animate-in zoom-in-95 fade-in duration-300" 
+            style={{ 
+              transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+              cursor: isZoomed ? 'zoom-out' : 'zoom-in'
+            }}
+            onClick={toggleZoom}
+            draggable={false}
+          />
+        )}
       </div>
     </div>
   );

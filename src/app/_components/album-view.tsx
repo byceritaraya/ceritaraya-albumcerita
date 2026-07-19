@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadForm } from '@/app/event/[eventId]/upload-form';
 import { PhotoLightbox } from './photo-lightbox';
 import { useT } from '@/lib/i18n/use-t';
 import { LangSwitcher } from '@/app/_components/lang-switcher';
+import { FilmRecipeSettings } from '@/lib/film/types';
+import { FilmImage } from '@/lib/film/FilmImage';
+import { FilmRenderer } from '@/lib/film/FilmRenderer';
 
 export interface AlbumPhoto {
   id: string;
@@ -37,6 +40,7 @@ export interface AlbumViewProps {
   slug?: string;
   isPublished?: boolean;
   publicUrl?: string;
+  filmRecipe?: FilmRecipeSettings | null;
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -130,14 +134,27 @@ function StatItem({ icon, value, label }: { icon: React.ReactNode; value: number
 
 // ─── Album View ───────────────────────────────────────────────────────────────
 
-export function AlbumView(props: AlbumViewProps) {
+export function AlbumView({
+  role,
+  eventId,
+  eventName,
+  hostName,
+  coverImageUrl,
+  theme,
+  photos: initialPhotos,
+  totalPhotos,
+  totalContributors,
+  contributorName,
+  photosUsed = 0,
+  photosPerGuest = 0,
+  currentContributorToken,
+  guestUrl,
+  slug,
+  isPublished,
+  publicUrl,
+  filmRecipe,
+}: AlbumViewProps) {
   const { t } = useT();
-  const {
-    role, eventId, eventName, hostName, coverImageUrl, theme,
-    photos: initialPhotos, totalPhotos, totalContributors,
-    contributorName, photosUsed = 0, photosPerGuest = 0,
-    guestUrl, slug, isPublished = false, publicUrl, currentContributorToken
-  } = props;
 
   const router = useRouter();
   const [photos, setPhotos] = useState<AlbumPhoto[]>(initialPhotos);
@@ -145,6 +162,24 @@ export function AlbumView(props: AlbumViewProps) {
   useEffect(() => {
     setPhotos(initialPhotos);
   }, [initialPhotos]);
+
+  // Stable memoized recipe — prevents new object references on re-render from
+  // causing redundant FilmRenderer.render() calls in child FilmImage components.
+  // FilmImage also guards with JSON.stringify, but a stable reference avoids
+  // even the effect setup/teardown overhead.
+  const stableFilmRecipe = useMemo(
+    () => filmRecipe ?? null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(filmRecipe)],
+  );
+
+  // Revoke all rendered Blob URLs when AlbumView unmounts.
+  // This is the canonical cleanup point for FilmRenderer's cache.
+  useEffect(() => {
+    return () => {
+      FilmRenderer.clearCache();
+    };
+  }, []);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -495,6 +530,9 @@ export function AlbumView(props: AlbumViewProps) {
               photosUsed={localPhotosUsed}
               photosPerGuest={photosPerGuest}
               onUploadComplete={handleUploadComplete}
+              filmRecipe={stableFilmRecipe}
+              coverImageUrl={coverImageUrl}
+              theme={theme}
             />
           ) : role === 'host' ? (
             <div className="grid grid-cols-2 gap-3">
@@ -585,13 +623,23 @@ export function AlbumView(props: AlbumViewProps) {
                     }}
                     className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.original_url}
-                      alt={`Photo by ${photo.guest_name}`}
-                      className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                      loading="lazy"
-                    />
+                    {stableFilmRecipe ? (
+                      <FilmImage
+                        photoId={photo.id}
+                        src={photo.original_url}
+                        recipeSettings={stableFilmRecipe}
+                        alt={`Photo by ${photo.guest_name}`}
+                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+                      />
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={photo.original_url}
+                        alt={`Photo by ${photo.guest_name}`}
+                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+                        loading="lazy"
+                      />
+                    )}
                     {/* "Taken by" label */}
                     <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
                       <div className="flex items-center gap-1.5">
@@ -638,7 +686,7 @@ export function AlbumView(props: AlbumViewProps) {
                   )}
 
                   {/* Guest-only: Delete own photo */}
-                  {(role as string) === 'guest' && !isPublished && photo.guest_token === props.currentContributorToken && (
+                  {(role as string) === 'guest' && !isPublished && photo.guest_token === currentContributorToken && (
                     <button
                       onClick={() => setPhotoToDelete(photo)}
                       className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
@@ -667,13 +715,23 @@ export function AlbumView(props: AlbumViewProps) {
                     }}
                     className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.original_url}
-                      alt={`Photo by ${photo.guest_name}`}
-                      className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                      loading="lazy"
-                    />
+                    {stableFilmRecipe ? (
+                      <FilmImage
+                        photoId={photo.id}
+                        src={photo.original_url}
+                        recipeSettings={stableFilmRecipe}
+                        alt={`Photo by ${photo.guest_name}`}
+                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+                      />
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={photo.original_url}
+                        alt={`Photo by ${photo.guest_name}`}
+                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+                        loading="lazy"
+                      />
+                    )}
                     {/* "Taken by" label */}
                     <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
                       <div className="flex items-center gap-1.5">
@@ -720,7 +778,7 @@ export function AlbumView(props: AlbumViewProps) {
                   )}
 
                   {/* Guest-only: Delete own photo */}
-                  {(role as string) === 'guest' && !isPublished && photo.guest_token === props.currentContributorToken && (
+                  {(role as string) === 'guest' && !isPublished && photo.guest_token === currentContributorToken && (
                     <button
                       onClick={() => setPhotoToDelete(photo)}
                       className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
@@ -771,13 +829,23 @@ export function AlbumView(props: AlbumViewProps) {
                     }}
                     className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.original_url}
-                      alt={`Photo by ${photo.guest_name}`}
-                      className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                      loading="lazy"
-                    />
+                    {stableFilmRecipe ? (
+                      <FilmImage
+                        photoId={photo.id}
+                        src={photo.original_url}
+                        recipeSettings={stableFilmRecipe}
+                        alt={`Photo by ${photo.guest_name}`}
+                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+                      />
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={photo.original_url}
+                        alt={`Photo by ${photo.guest_name}`}
+                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+                        loading="lazy"
+                      />
+                    )}
                     {/* "Taken by" label */}
                     <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
                       <div className="flex items-center gap-1.5">
@@ -824,7 +892,7 @@ export function AlbumView(props: AlbumViewProps) {
                   )}
 
                   {/* Guest-only: Delete own photo */}
-                  {(role as string) === 'guest' && !isPublished && photo.guest_token === props.currentContributorToken && (
+                  {(role as string) === 'guest' && !isPublished && photo.guest_token === currentContributorToken && (
                     <button
                       onClick={() => setPhotoToDelete(photo)}
                       className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
@@ -866,6 +934,7 @@ export function AlbumView(props: AlbumViewProps) {
           hasNext={selectedIndex < visiblePhotos.length - 1}
           eventName={eventName}
           photoNumber={selectedIndex + 1}
+          filmRecipe={stableFilmRecipe}
         />
       )}
 

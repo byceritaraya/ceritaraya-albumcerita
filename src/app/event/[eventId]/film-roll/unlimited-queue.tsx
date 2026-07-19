@@ -1,5 +1,7 @@
 import { useT } from '@/lib/i18n/use-t';
 import { FilmFrame, GlobalMessage } from './types';
+import { FilmRecipeSettings } from '@/lib/film/types';
+import { FilmImage } from '@/lib/film/FilmImage';
 
 // Shared Icons
 export function IconSpinner({ className }: { className?: string }) {
@@ -79,6 +81,7 @@ interface UnlimitedQueueProps {
   onUploadBatch: () => void;
   onCameraClick: () => void;
   onGalleryClick: () => void;
+  filmRecipe?: FilmRecipeSettings | null;
 }
 
 export function UnlimitedQueue({
@@ -89,6 +92,7 @@ export function UnlimitedQueue({
   onUploadBatch,
   onCameraClick,
   onGalleryClick,
+  filmRecipe,
 }: UnlimitedQueueProps) {
   const { t } = useT();
   const pendingCount = unlimitedQueue.filter((s) => s.status === 'queued' || s.status === 'error').length;
@@ -114,8 +118,18 @@ export function UnlimitedQueue({
           <div className="grid grid-cols-3 gap-2">
             {unlimitedQueue.map((shot) => (
               <div key={shot.id} className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[var(--bg-tertiary)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={shot.previewUrl} alt="Captured moment" className="h-full w-full object-cover" />
+                {filmRecipe ? (
+                  <FilmImage
+                    photoId={shot.id}
+                    src={shot.previewUrl}
+                    recipeSettings={filmRecipe}
+                    alt="Captured moment"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={shot.previewUrl} alt="Captured moment" className="h-full w-full object-cover" />
+                )}
                 
                 {shot.status === 'uploading' && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">

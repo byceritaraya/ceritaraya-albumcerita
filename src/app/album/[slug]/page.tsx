@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/service';
 import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
+import { type FilmRecipeSettings } from '@/lib/film/types';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -13,7 +14,7 @@ export default async function PublicAlbumPage({ params }: PageProps) {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, event_id, name, host_name, event_type, cover_image_url, theme, is_published')
+    .select('id, event_id, name, event_type, photos_per_guest, theme, cover_image_url, host_name, is_published, film_recipes (*)')
     .eq('slug', slug)
     .single();
 
@@ -30,7 +31,7 @@ export default async function PublicAlbumPage({ params }: PageProps) {
   ] = await Promise.all([
     supabase
       .from('photos')
-      .select('id, original_url, storage_path, uploaded_at, guest_name')
+      .select('id, original_url, storage_path, uploaded_at, guest_name, is_hidden')
       .eq('event_id', event.id)
       .eq('is_hidden', false)
       .is('deleted_at', null)
@@ -45,6 +46,7 @@ export default async function PublicAlbumPage({ params }: PageProps) {
       .from('photos')
       .select('guest_token')
       .eq('event_id', event.id)
+      .eq('is_hidden', false)
       .is('deleted_at', null),
   ]);
 
@@ -59,7 +61,11 @@ export default async function PublicAlbumPage({ params }: PageProps) {
 
     for (const p of rawPhotos) {
       const signed = signedData?.find(s => s.path === p.storage_path);
-      photos.push({ ...p, original_url: signed?.signedUrl ?? p.original_url });
+      photos.push({
+        ...p,
+        original_url: signed?.signedUrl ?? p.original_url,
+        is_hidden: p.is_hidden ?? false,
+      });
     }
   }
 
@@ -87,6 +93,7 @@ export default async function PublicAlbumPage({ params }: PageProps) {
       photos={photos}
       totalPhotos={totalPhotos ?? 0}
       totalContributors={totalContributors ?? 0}
+      filmRecipe={(event.film_recipes as unknown as { settings: FilmRecipeSettings } | null)?.settings ?? null}
       isPublished={event.is_published}
     />
   );

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { cookies, headers } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
 import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
+import { type FilmRecipeSettings } from '@/lib/film/types';
 import { HostAuth } from './host-auth';
 import { HostWelcome } from './host-welcome';
 
@@ -16,7 +17,7 @@ export default async function HostPage({ params }: PageProps) {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, event_id, name, host_name, event_type, expires_at, cover_image_url, theme, is_published, guest_pin')
+    .select('id, event_id, name, host_name, event_type, expires_at, cover_image_url, theme, is_published, guest_pin, film_recipes (*)')
     .eq('slug', slug)
     .single();
 
@@ -119,18 +120,16 @@ export default async function HostPage({ params }: PageProps) {
     }
   }
 
-
-
-  // ── Build URLs ────────────────────────────────────────────────────────
+  // ── Build URLs ────────────────────────────────────────────────────────────
   const headersList = await headers();
   const hostHeader = headersList.get('host') || 'localhost:3000';
   const protocol = hostHeader.includes('localhost') ? 'http' : 'https';
-  
+
   let guestUrl = `${protocol}://${hostHeader}/guest/${slug}`;
   if (event.guest_pin) {
     guestUrl += `?pin=${event.guest_pin}`;
   }
-  
+
   const publicUrl = `${protocol}://${hostHeader}/album/${slug}`;
 
   const showWelcome = cookieStore.has(`show_host_welcome_${slug}`);
@@ -153,11 +152,12 @@ export default async function HostPage({ params }: PageProps) {
         theme={event.theme ?? undefined}
         photos={photos}
         totalPhotos={totalPhotos ?? 0}
-        totalContributors={totalContributors ?? 0}
+        totalContributors={totalContributors}
         guestUrl={guestUrl}
-        slug={slug}
         isPublished={event.is_published}
         publicUrl={publicUrl}
+        slug={slug}
+        filmRecipe={(event.film_recipes as unknown as { settings: FilmRecipeSettings } | null)?.settings ?? null}
       />
     </>
   );

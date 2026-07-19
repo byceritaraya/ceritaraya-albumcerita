@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useT } from '@/lib/i18n/use-t';
 
+import { FilmRecipeSettings } from '@/lib/film/types';
+import { FilmImage } from '@/lib/film/FilmImage';
+
 export interface GalleryPhoto {
   id: string;
   original_url: string;
@@ -179,6 +182,7 @@ export function Gallery({ photos, totalPhotos, totalContributors }: GalleryProps
           onNext={goNext}
           hasPrev={selectedIndex > 0}
           hasNext={selectedIndex < photos.length - 1}
+          filmRecipe={filmRecipe}
         />
       )}
     </section>

@@ -95,12 +95,14 @@ export async function createEvent(
   const photosPerGuest = Number(formData.get('photos_per_guest'));
   const hostName = (formData.get('host_name') as string)?.trim() || null;
   const theme = (formData.get('theme') as string)?.trim() || 'Sage';
+  const filmRecipeId = (formData.get('film_recipe_id') as string)?.trim();
 
   // Validation
   if (!name) return { error: 'Event name is required.' };
   if (!eventDate) return { error: 'Event date is required.' };
   // Validate date format (YYYY-MM-DD)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return { error: 'Invalid date format.' };
+  if (!filmRecipeId) return { error: 'Film recipe is required.' };
 
   const VALID_EVENT_TYPES = ['wedding', 'birthday', 'corporate', 'other'] as const;
   if (!VALID_EVENT_TYPES.includes(eventType as typeof VALID_EVENT_TYPES[number]))
@@ -146,6 +148,7 @@ export async function createEvent(
     guest_pin: guestPin,  // kept for QR-friendly URL convenience
     host_name: hostName,
     theme,
+    film_recipe_id: filmRecipeId,
   });
 
   if (error) return { error: error.message };

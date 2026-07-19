@@ -17,6 +17,16 @@ CREATE TYPE event_type AS ENUM (
 -- 2. TABLE CREATION & CONSTRAINTS
 -- ==========================================
 
+CREATE TABLE film_recipes (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text NOT NULL,
+  slug text UNIQUE NOT NULL,
+  description text,
+  settings jsonb NOT NULL,
+  active boolean DEFAULT true NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
 CREATE TABLE events (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   slug text UNIQUE NOT NULL,
@@ -35,6 +45,7 @@ CREATE TABLE events (
   expires_at timestamptz NOT NULL,
   created_at timestamptz DEFAULT now() NOT NULL,
   updated_at timestamptz DEFAULT now() NOT NULL,
+  film_recipe_id uuid REFERENCES film_recipes(id) NOT NULL,
   
   -- Constraints
   CONSTRAINT check_photos_per_guest CHECK (photos_per_guest IN (5, 10, 20, 36)),
@@ -127,6 +138,7 @@ ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE client_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pin_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE film_recipes ENABLE ROW LEVEL SECURITY;
 
 -- Helper function to check admin role
 CREATE OR REPLACE FUNCTION is_admin() RETURNS boolean AS $$
@@ -163,6 +175,19 @@ CREATE POLICY "Public can view active visible photos of published events" ON pho
   );
 
 CREATE POLICY "Admins have full access to photos" ON photos 
+  FOR ALL TO authenticated 
+  USING (is_admin()) 
+  WITH CHECK (is_admin());
+
+-- ------------------------------------------
+-- FILM_RECIPES:
+-- Public can view active recipes.
+-- ------------------------------------------
+CREATE POLICY "Public can view active film recipes" ON film_recipes 
+  FOR SELECT TO public
+  USING (active = true);
+
+CREATE POLICY "Admins have full access to film recipes" ON film_recipes 
   FOR ALL TO authenticated 
   USING (is_admin()) 
   WITH CHECK (is_admin());
@@ -210,3 +235,16 @@ CREATE POLICY "Admins full access to albumcerita_photos" ON storage.objects
   FOR ALL TO authenticated
   USING (bucket_id = 'albumcerita_photos' AND is_admin())
   WITH CHECK (bucket_id = 'albumcerita_photos' AND is_admin());
+
+-- ==========================================
+-- 7. DEFAULT DATA SEED
+-- ==========================================
+
+INSERT INTO film_recipes (name, slug, description, settings)
+VALUES 
+  ('AlbumCerita Signature', 'albumcerita-signature', 'Balanced & Timeless', '{"brightness": 1.0, "contrast": 1.0, "saturation": 1.0, "warmth": 0, "grain": "none", "vignette": "none"}'),
+  ('Golden Memories', 'golden-memories', 'Warm Nostalgic Glow', '{"brightness": 1.1, "contrast": 1.0, "saturation": 1.3, "warmth": 50, "grain": "medium", "vignette": "soft"}'),
+  ('Soft Romance', 'soft-romance', 'Bright & Airy', '{"brightness": 1.3, "contrast": 0.7, "saturation": 1.0, "warmth": 10, "grain": "none", "vignette": "none"}'),
+  ('Timeless Portrait', 'timeless-portrait', 'Elegant Skin Tones', '{"brightness": 1.05, "contrast": 1.05, "saturation": 0.5, "warmth": -5, "grain": "light", "vignette": "none"}'),
+  ('Midnight Cinema', 'midnight-cinema', 'Cinematic Night Look', '{"brightness": 0.6, "contrast": 1.5, "saturation": 0.8, "warmth": -30, "grain": "heavy", "vignette": "strong"}')
+ON CONFLICT (slug) DO NOTHING;

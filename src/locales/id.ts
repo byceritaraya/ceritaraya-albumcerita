@@ -140,6 +140,16 @@ const id: Translations = {
     fromGallery: 'Dari Galeri',
   },
 
+  // ─── Film Processing ────────────────────────────────────────────────────────
+  filmProcessing: {
+    developMyFilm: 'Cuci Rol Film',
+    preparing: 'Mempersiapkan Rol Film...',
+    developing: 'Memproses Negatif Film...',
+    applying: 'Menerapkan Resep Film...',
+    finalizing: 'Sedang Diselesaikan...',
+    ready: 'Rol Filmmu Siap ✨',
+  },
+
   // ─── Publish Modal ──────────────────────────────────────────────────────────
   publishModal: {
     title: 'Siap Dibagikan?',
