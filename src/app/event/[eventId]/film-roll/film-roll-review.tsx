@@ -1,8 +1,6 @@
 import { useT } from '@/lib/i18n/use-t';
 import { FilmFrame, GlobalMessage } from './types';
 import { IconFilmRoll, IconSpinner, IconCheck, IconRefreshCcw, IconUpload } from './unlimited-queue';
-import { FilmImage } from '@/lib/film/FilmImage';
-import { FilmRecipeSettings } from '@/lib/film/types';
 
 interface FilmRollReviewProps {
   frames: FilmFrame[];
@@ -13,7 +11,6 @@ interface FilmRollReviewProps {
   onRetake: (index: number) => void;
   onUploadBatch: () => void;
   onDevelop: () => void;
-  filmRecipe?: FilmRecipeSettings | null;
 }
 
 export function FilmRollReview({
@@ -25,7 +22,6 @@ export function FilmRollReview({
   onRetake,
   onUploadBatch,
   onDevelop,
-  filmRecipe,
 }: FilmRollReviewProps) {
   const { t } = useT();
 
@@ -51,13 +47,30 @@ export function FilmRollReview({
         {frames.map((frame, index) => (
           <div key={frame.id} className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-[var(--bg-tertiary)] border border-[var(--bg-tertiary)] group">
             {isProcessed ? (
-              <FilmImage
-                photoId={frame.id}
-                src={frame.previewUrl}
-                recipeSettings={filmRecipe}
-                alt={`Frame ${index + 1}`}
-                className="h-full w-full object-cover"
-              />
+              frame.processedUrl ? (
+                /* Show the already-rendered processed blob directly — this is the exact
+                   same pixel data that was uploaded. No re-rendering, no original flash. */
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={frame.processedUrl}
+                  alt={`Frame ${index + 1}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                /* processedUrl not yet available — render is still in progress.
+                   Show original at low opacity with a shimmer overlay. */
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={frame.previewUrl}
+                    alt={`Frame ${index + 1}`}
+                    className="h-full w-full object-cover opacity-40 blur-sm"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <IconSpinner className="h-6 w-6 animate-spin text-white" />
+                  </div>
+                </>
+              )
             ) : (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img src={frame.previewUrl} alt={`Frame ${index + 1}`} className="h-full w-full object-cover" />

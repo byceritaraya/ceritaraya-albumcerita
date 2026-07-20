@@ -9,6 +9,7 @@ import { FilmRecipeSettings } from '@/lib/film/types';
 import { FilmRenderer } from '@/lib/film/FilmRenderer';
 import { FilmProcessing } from './film-roll/film-processing';
 import { IconCamera } from './film-roll/unlimited-queue';
+import { useCallback } from 'react';
 
 export interface UploadFormProps {
   eventId: string;
@@ -23,6 +24,24 @@ export interface UploadFormProps {
 export function UploadForm(props: UploadFormProps) {
   const { t } = useT();
   const filmRoll = useFilmRoll(props);
+
+  // Called when the guest taps "Develop My Film".
+  // Kicks off rendering all frames concurrently in the background so that
+  // by the time FilmProcessing animation completes the processed blobs are
+  // ready and written back into each frame's processedUrl field.
+  const handleDevelop = useCallback(() => {
+    filmRoll.setDevelopmentState('developing');
+    if (props.filmRecipe) {
+      filmRoll.frames.forEach(frame => {
+        // Just preload into cache. The hook's useEffect will run when 
+        // developmentState becomes 'processed' and pick this up.
+        FilmRenderer.render(frame.id, frame.previewUrl, props.filmRecipe!)
+          .catch(() => {
+            // silently ignore — the upload phase will retry and surface the error
+          });
+      });
+    }
+  }, [filmRoll, props.filmRecipe]);
 
   return (
     <>
@@ -53,18 +72,7 @@ export function UploadForm(props: UploadFormProps) {
             retakeJustCompleted={filmRoll.retakeJustCompleted}
             onRetake={filmRoll.triggerRetake}
             onUploadBatch={() => filmRoll.handleUploadBatch(false)}
-            onDevelop={() => {
-              // Start rendering immediately — in parallel with the animation.
-              // When FilmProcessing completes and FilmRollReview mounts,
-              // FilmImage will find the results already in cache.
-              if (props.filmRecipe) {
-                filmRoll.frames.forEach(f =>
-                  FilmRenderer.preload(f.id, f.previewUrl, props.filmRecipe!)
-                );
-              }
-              filmRoll.setDevelopmentState('developing');
-            }}
-            filmRecipe={props.filmRecipe}
+            onDevelop={handleDevelop}
           />
         ) : (
           <FilmRollDashboard

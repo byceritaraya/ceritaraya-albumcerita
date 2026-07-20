@@ -182,7 +182,6 @@ export function Gallery({ photos, totalPhotos, totalContributors }: GalleryProps
           onNext={goNext}
           hasPrev={selectedIndex > 0}
           hasNext={selectedIndex < photos.length - 1}
-          filmRecipe={filmRecipe}
         />
       )}
     </section>

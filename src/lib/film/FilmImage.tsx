@@ -111,11 +111,6 @@ export function FilmImage({ photoId, src, recipeSettings, className, alt, ...pro
         }`}
         {...props}
       />
-      {renderedSrc === src && (
-        <div className="absolute inset-0 border-4 border-red-500 flex items-center justify-center bg-red-500/20 z-10">
-          <span className="bg-red-500 text-white font-bold px-2 py-1 text-xs uppercase tracking-widest">Fallback</span>
-        </div>
-      )}
     </div>
   );
 }

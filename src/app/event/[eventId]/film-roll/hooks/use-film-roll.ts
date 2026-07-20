@@ -43,6 +43,17 @@ export function useFilmRoll({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  // Always keep a ref to the current frames so the development-complete
+  // effect below can access them without a stale closure.
+  const framesRef = useRef<FilmFrame[]>(frames);
+  useEffect(() => {
+    framesRef.current = frames;
+  }, [frames]);
+
+  // Stable recipe key (JSON string) — prevents the effect below from
+  // re-firing on mere reference changes to the filmRecipe object.
+  const recipeKey = filmRecipe != null ? JSON.stringify(filmRecipe) : null;
+
   // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
@@ -62,6 +73,64 @@ export function useFilmRoll({
       return () => clearTimeout(timer);
     }
   }, [retakeJustCompleted, preservedScrollY]);
+
+  // ── Development-complete effect ───────────────────────────────────────────
+  // Fires after React commits `developmentState = 'processed'` (i.e., after
+  // the FilmProcessing animation calls onComplete). At this point we ensure
+  // every frame has processedUrl populated — the exact pixel data the guest
+  // sees and the host receives.
+  //
+  // Why a useEffect here instead of async .then() in the button handler?
+  // Because the button-handler approach fires setProcessedUrl from async
+  // promises that run concurrently with FilmProcessing's animation. Each
+  // setProcessedUrl call re-renders UploadForm, which creates a new onComplete
+  // prop, which resets FilmProcessing's final 1000 ms timer — creating a
+  // race condition that can prevent or delay onComplete firing.
+  //
+  // This effect runs AFTER onComplete has already fired and the state has
+  // been committed, so there is no interference with the animation.
+  useEffect(() => {
+    if (developmentState !== 'processed') return;
+
+    const currentFrames = framesRef.current;
+
+    if (!filmRecipe) {
+      // No recipe configured — the "processed" result IS the original photo.
+      // Set processedUrl = previewUrl so FilmRollReview can display it via the
+      // processedUrl branch (keeps the display logic uniform).
+      setFrames(prev =>
+        prev.map(f => f.processedUrl ? f : { ...f, processedUrl: f.previewUrl })
+      );
+      return;
+    }
+
+    const processFrames = async () => {
+      for (const frame of currentFrames) {
+        if (frame.processedUrl) continue; // already populated (e.g., from preload)
+
+        try {
+          const url = await FilmRenderer.render(frame.id, frame.previewUrl, filmRecipe);
+          setFrames(prev =>
+            prev.map(f => f.id === frame.id ? { ...f, processedUrl: url } : f)
+          );
+        } catch (err) {
+          console.error('Failed to render frame in review:', err);
+          setFrames(prev =>
+            prev.map(f =>
+              f.id === frame.id && !f.processedUrl
+                ? { ...f, status: 'error', errorMsg: 'Failed to process' }
+                : f
+            )
+          );
+        }
+      }
+    };
+
+    processFrames();
+    // Intentionally omitting `frames` from deps — we read the snapshot from
+    // framesRef to avoid re-firing the effect every time a frame is updated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [developmentState, recipeKey]);
 
   const activeFrames = frames.length;
   const remainingSlots = unlimited ? Infinity : Math.max(0, photosPerGuest - photosUsed - activeFrames);
@@ -184,7 +253,7 @@ export function useFilmRoll({
 
     const setQueueState = isUnlimitedFlow ? setUnlimitedQueue : setFrames;
 
-    // Phase 1: Pre-process all photos
+    // Phase 1: Pre-process all photos and immediately update their processedUrl in state
     const processedFiles: { frameId: string; file: File }[] = [];
     let processingFailed = false;
 
@@ -196,8 +265,16 @@ export function useFilmRoll({
       try {
         let fileToUpload = frame.file;
         if (filmRecipe) {
-          const processedUrl = await FilmRenderer.render(frame.id, frame.previewUrl, filmRecipe);
-          const res = await fetch(processedUrl);
+          let processedBlobUrl = frame.processedUrl;
+          if (!processedBlobUrl) {
+            processedBlobUrl = await FilmRenderer.render(frame.id, frame.previewUrl, filmRecipe);
+            // Store the rendered blob URL back into the frame immediately so the
+            // review UI can display the processed image before upload finishes.
+            setQueueState(prev =>
+              prev.map(f => (f.id === frame.id ? { ...f, processedUrl: processedBlobUrl } : f))
+            );
+          }
+          const res = await fetch(processedBlobUrl);
           const blob = await res.blob();
           fileToUpload = new File([blob], frame.file.name, { type: 'image/jpeg' });
         }
