@@ -33,6 +33,11 @@ async function resolveSession(eventId: string) {
     .single();
 
   if (contributorError || !contributor) {
+    console.error('[resolveSession] Contributor lookup failed:', {
+      contributorId,
+      eventId,
+      error: contributorError,
+    });
     return { error: 'Invalid contributor session.' } as const;
   }
 

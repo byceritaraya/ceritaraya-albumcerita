@@ -56,6 +56,7 @@ export function UploadForm(props: UploadFormProps) {
             onCameraClick={() => filmRoll.cameraInputRef.current?.click()}
             onGalleryClick={() => filmRoll.galleryInputRef.current?.click()}
             filmRecipe={props.filmRecipe}
+            theme={props.theme}
           />
         ) : filmRoll.developmentState === 'developing' ? (
           <FilmProcessing
@@ -73,6 +74,7 @@ export function UploadForm(props: UploadFormProps) {
             onRetake={filmRoll.triggerRetake}
             onUploadBatch={() => filmRoll.handleUploadBatch(false)}
             onDevelop={handleDevelop}
+            theme={props.theme}
           />
         ) : (
           <FilmRollDashboard

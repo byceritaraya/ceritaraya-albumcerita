@@ -207,7 +207,7 @@ export function AlbumView({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadingContributor, setDownloadingContributor] = useState<string | null>(null);
 
-  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
+  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Onyx', 'Mauve', 'Ivory'];
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
   const themeClass = `theme-${safeTheme.toLowerCase()}`;
   const shotsLeft = photosPerGuest > 0 ? Math.max(0, photosPerGuest - localPhotosUsed) : null;
@@ -405,31 +405,33 @@ export function AlbumView({
   return (
     <div className={`relative min-h-[100dvh] bg-[var(--bg-primary)] ${themeClass}`}>
       {/* ── Top bar ── */}
-      <div className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-5 pt-4 pb-12"
-           style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 35%, rgba(255,255,255,0.65) 65%, rgba(255,255,255,0.35) 85%, transparent 100%)' }}>
-        <div className="flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 text-[var(--theme-primary)]">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-          </svg>
+      {selectedIndex === null && (
+        <div className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-5 pt-4 pb-12"
+             style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 35%, rgba(255,255,255,0.65) 65%, rgba(255,255,255,0.35) 85%, transparent 100%)' }}>
+          <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 text-[var(--theme-primary)]">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+            </svg>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            <LangSwitcher className="mr-3" />
+            {role !== 'public' && (
+              <>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
+                  <IconUsers className="h-3.5 w-3.5 text-[var(--theme-primary)]" />
+                </div>
+                <span className="font-medium text-xs text-[var(--text-secondary)]">
+                  {role === 'host' ? (hostName || t.albumView.roleHost) : (contributorName || t.albumView.roleGuest)}
+                </span>
+                <span className="text-[var(--text-muted)] text-xs">
+                  · {role === 'host' ? t.albumView.roleHost : t.albumView.roleGuest}
+                </span>
+              </>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-          <LangSwitcher className="mr-3" />
-          {role !== 'public' && (
-            <>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
-                <IconUsers className="h-3.5 w-3.5 text-[var(--theme-primary)]" />
-              </div>
-              <span className="font-medium text-xs text-[var(--text-secondary)]">
-                {role === 'host' ? (hostName || t.albumView.roleHost) : (contributorName || t.albumView.roleGuest)}
-              </span>
-              <span className="text-[var(--text-muted)] text-xs">
-                · {role === 'host' ? t.albumView.roleHost : t.albumView.roleGuest}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* ── Cover Hero ── */}
       <div className="relative w-full h-[50dvh] shrink-0 pointer-events-none">
@@ -451,7 +453,7 @@ export function AlbumView({
       <div className="relative z-10 px-5 pb-12 flex-1 -mt-8">
 
         {/* Event title */}
-        <h1 className="font-heading text-4xl leading-none tracking-tight text-[var(--text-primary)] text-balance">
+        <h1 className="font-heading text-4xl leading-none tracking-tight text-[var(--text-primary)] text-balance text-center">
           {eventName}
         </h1>
 
@@ -532,7 +534,7 @@ export function AlbumView({
               onUploadComplete={handleUploadComplete}
               filmRecipe={stableFilmRecipe}
               coverImageUrl={coverImageUrl}
-              theme={theme}
+              theme={safeTheme.toLowerCase()}
             />
           ) : role === 'host' ? (
             <div className="grid grid-cols-2 gap-3">
@@ -926,7 +928,10 @@ export function AlbumView({
       {/* ── Lightbox modal ── */}
       {selectedIndex !== null && visiblePhotos[selectedIndex] && (
         <PhotoLightbox
-          photo={visiblePhotos[selectedIndex]}
+          photoId={visiblePhotos[selectedIndex].id}
+          photoUrl={visiblePhotos[selectedIndex].original_url}
+          guestName={visiblePhotos[selectedIndex].guest_name}
+          uploadedAt={visiblePhotos[selectedIndex].uploaded_at}
           onClose={closeModal}
           onPrev={goPrev}
           onNext={goNext}
@@ -935,6 +940,13 @@ export function AlbumView({
           eventName={eventName}
           photoNumber={selectedIndex + 1}
           filmRecipe={stableFilmRecipe}
+          isPublished={isPublished}
+          theme={safeTheme.toLowerCase()}
+          onDelete={
+            (role === 'guest' && !isPublished && visiblePhotos[selectedIndex].guest_token === currentContributorToken)
+            ? () => setPhotoToDelete(visiblePhotos[selectedIndex])
+            : undefined
+          }
         />
       )}
 

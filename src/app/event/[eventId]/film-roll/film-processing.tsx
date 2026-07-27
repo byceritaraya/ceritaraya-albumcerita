@@ -9,7 +9,7 @@ export interface FilmProcessingProps {
   theme?: string;
 }
 
-const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
+const APPROVED_THEMES = ['sage', 'blush', 'slate', 'onyx', 'mauve', 'ivory'];
 
 export function FilmProcessing({ onComplete, coverImageUrl, theme }: FilmProcessingProps) {
   const { t } = useT();
@@ -41,8 +41,8 @@ export function FilmProcessing({ onComplete, coverImageUrl, theme }: FilmProcess
 
   const progressPct = Math.max(10, ((step + 1) / steps.length) * 100);
 
-  const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
-  const themeClass = `theme-${safeTheme.toLowerCase()}`;
+  const safeThemeName = theme && APPROVED_THEMES.includes(theme.toLowerCase()) ? theme.toLowerCase() : 'sage';
+  const themeClass = `theme-${safeThemeName}`;
 
   return (
     <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-6 ac-modal-enter ${themeClass}`}>

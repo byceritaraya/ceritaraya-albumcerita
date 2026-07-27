@@ -32,7 +32,7 @@ export function HostWelcome({
 
   if (!isOpen) return null;
 
-  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
+  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Onyx', 'Mauve', 'Ivory'];
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
   const themeClass = `theme-${safeTheme.toLowerCase()}`;
 

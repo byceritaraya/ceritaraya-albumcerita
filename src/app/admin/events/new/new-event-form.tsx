@@ -7,6 +7,8 @@ import { createEvent, type CreateEventState } from './actions';
 import { useT } from '@/lib/i18n/use-t';
 import { LangSwitcher } from '@/app/_components/lang-switcher';
 
+const THEMES = ['Sage', 'Blush', 'Slate', 'Onyx', 'Mauve', 'Ivory'];
+
 // ── Submit button — reads pending state from the nearest form ────────────────
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -184,7 +186,7 @@ export function NewEventForm({ availableRecipes }: { availableRecipes: { id: str
               <option value="Sage">Sage</option>
               <option value="Blush">Blush</option>
               <option value="Slate">Slate</option>
-              <option value="Sand">Sand</option>
+              <option value="Onyx">Onyx</option>
               <option value="Mauve">Mauve</option>
               <option value="Ivory">Ivory</option>
             </select>

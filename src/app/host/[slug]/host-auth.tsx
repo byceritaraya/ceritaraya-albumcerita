@@ -36,7 +36,7 @@ export function HostAuth({
   const [state, formAction] = useActionState(authenticateHost, {});
   const [showSplash, setShowSplash] = useState(true);
 
-  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
+  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Onyx', 'Mauve', 'Ivory'];
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
   const themeClass = `theme-${safeTheme.toLowerCase()}`;
 
@@ -77,7 +77,7 @@ export function HostAuth({
             <p className="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase drop-shadow-md">
               {t.hostAuth.roleLabel}
             </p>
-            <h1 className="font-heading text-3xl text-[var(--text-primary)] leading-tight text-balance">
+            <h1 className="font-heading text-3xl text-[var(--text-primary)] leading-tight text-balance text-center">
               {t.hostAuth.title(hostName || 'Host')}
             </h1>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">

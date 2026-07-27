@@ -1,6 +1,8 @@
+import { useState, useCallback } from 'react';
 import { useT } from '@/lib/i18n/use-t';
 import { FilmFrame, GlobalMessage } from './types';
 import { IconFilmRoll, IconSpinner, IconCheck, IconRefreshCcw, IconUpload } from './unlimited-queue';
+import { PhotoLightbox } from '@/app/_components/photo-lightbox';
 
 interface FilmRollReviewProps {
   frames: FilmFrame[];
@@ -11,6 +13,7 @@ interface FilmRollReviewProps {
   onRetake: (index: number) => void;
   onUploadBatch: () => void;
   onDevelop: () => void;
+  theme?: string;
 }
 
 export function FilmRollReview({
@@ -22,10 +25,18 @@ export function FilmRollReview({
   onRetake,
   onUploadBatch,
   onDevelop,
+  theme,
 }: FilmRollReviewProps) {
   const { t } = useT();
 
   const isProcessed = developmentState === 'processed';
+
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  
+  const openModal = useCallback((i: number) => setSelectedIndex(i), []);
+  const closeModal = useCallback(() => setSelectedIndex(null), []);
+  const goPrev = useCallback(() => setSelectedIndex(i => (i !== null && i > 0 ? i - 1 : i)), []);
+  const goNext = useCallback(() => setSelectedIndex(i => (i !== null && i < frames.length - 1 ? i + 1 : i)), [frames.length]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,7 +56,16 @@ export function FilmRollReview({
 
       <div className="grid grid-cols-2 gap-3">
         {frames.map((frame, index) => (
-          <div key={frame.id} className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-[var(--bg-tertiary)] border border-[var(--bg-tertiary)] group">
+          <div
+            key={frame.id}
+            role="button"
+            tabIndex={0}
+            className={`relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-[var(--bg-tertiary)] block focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] text-left ${
+              isProcessed ? 'cursor-pointer' : 'cursor-default'
+            }`}
+            onClick={() => setSelectedIndex(index)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedIndex(index); }}
+          >
             {isProcessed ? (
               frame.processedUrl ? (
                 /* Show the already-rendered processed blob directly — this is the exact
@@ -106,8 +126,9 @@ export function FilmRollReview({
             {(frame.status === 'queued' || frame.status === 'error') && !isUploading && !isProcessed && (
               <button
                 type="button"
-                onClick={() => onRetake(index)}
-                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white/90 backdrop-blur-sm transition hover:bg-black/50 active:scale-95"
+                onClick={(e) => { e.stopPropagation(); onRetake(index); }}
+                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full text-white transition hover:opacity-80 active:scale-95"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 70%, transparent)' }}
                 aria-label={t.filmRoll.retakeFrame(index + 1)}
               >
                 <IconRefreshCcw className="h-3.5 w-3.5" />
@@ -142,6 +163,27 @@ export function FilmRollReview({
           </button>
         )}
       </div>
+
+      {selectedIndex !== null && frames[selectedIndex] && (
+        <PhotoLightbox
+          photoId={frames[selectedIndex].id}
+          photoUrl={frames[selectedIndex].processedUrl || frames[selectedIndex].previewUrl}
+          onClose={closeModal}
+          onPrev={goPrev}
+          onNext={goNext}
+          hasPrev={selectedIndex > 0}
+          hasNext={selectedIndex < frames.length - 1}
+          eventName="Roll Review"
+          photoNumber={selectedIndex + 1}
+          filmRecipe={null}
+          theme={theme}
+          onRetake={
+            (frames[selectedIndex].status === 'queued' || frames[selectedIndex].status === 'error') && !isUploading && !isProcessed
+            ? () => { onRetake(selectedIndex); closeModal(); }
+            : undefined
+          }
+        />
+      )}
     </div>
   );
 }

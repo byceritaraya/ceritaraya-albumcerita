@@ -57,7 +57,7 @@ export function GuestAuth({
     }
   }, [state?.error]);
 
-  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
+  const APPROVED_THEMES = ['Sage', 'Blush', 'Slate', 'Onyx', 'Mauve', 'Ivory'];
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
   const themeClass = `theme-${safeTheme.toLowerCase()}`;
 
@@ -99,7 +99,7 @@ export function GuestAuth({
               <p className="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase drop-shadow-md">
                 {t.guestAuth.roleLabel}
               </p>
-              <h1 className="font-heading text-3xl text-[var(--text-primary)] leading-tight text-balance">
+              <h1 className="font-heading text-3xl text-[var(--text-primary)] leading-tight text-balance text-center">
                 {t.guestAuth.pinTitle(eventName || 'Event')}
               </h1>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">
@@ -111,7 +111,7 @@ export function GuestAuth({
               <p className="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase drop-shadow-md">
                 {t.guestAuth.roleLabel}
               </p>
-              <h1 className="font-heading text-2xl text-[var(--text-primary)]">
+              <h1 className="font-heading text-2xl text-[var(--text-primary)] text-center">
                 {t.guestAuth.nameTitle}
               </h1>
             </div>

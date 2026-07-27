@@ -1,7 +1,9 @@
+import { useState, useCallback } from 'react';
 import { useT } from '@/lib/i18n/use-t';
 import { FilmFrame, GlobalMessage } from './types';
 import { FilmRecipeSettings } from '@/lib/film/types';
 import { FilmImage } from '@/lib/film/FilmImage';
+import { PhotoLightbox } from '@/app/_components/photo-lightbox';
 
 // Shared Icons
 export function IconSpinner({ className }: { className?: string }) {
@@ -82,6 +84,7 @@ interface UnlimitedQueueProps {
   onCameraClick: () => void;
   onGalleryClick: () => void;
   filmRecipe?: FilmRecipeSettings | null;
+  theme?: string;
 }
 
 export function UnlimitedQueue({
@@ -93,9 +96,17 @@ export function UnlimitedQueue({
   onCameraClick,
   onGalleryClick,
   filmRecipe,
+  theme,
 }: UnlimitedQueueProps) {
   const { t } = useT();
   const pendingCount = unlimitedQueue.filter((s) => s.status === 'queued' || s.status === 'error').length;
+
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  
+  const openModal = useCallback((i: number) => setSelectedIndex(i), []);
+  const closeModal = useCallback(() => setSelectedIndex(null), []);
+  const goPrev = useCallback(() => setSelectedIndex(i => (i !== null && i > 0 ? i - 1 : i)), []);
+  const goNext = useCallback(() => setSelectedIndex(i => (i !== null && i < unlimitedQueue.length - 1 ? i + 1 : i)), [unlimitedQueue.length]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -116,8 +127,15 @@ export function UnlimitedQueue({
             )}
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {unlimitedQueue.map((shot) => (
-              <div key={shot.id} className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[var(--bg-tertiary)]">
+            {unlimitedQueue.map((shot, index) => (
+              <div 
+                key={shot.id} 
+                role="button"
+                tabIndex={0}
+                className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[var(--bg-tertiary)] block focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] text-left cursor-pointer"
+                onClick={() => openModal(index)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openModal(index); }}
+              >
                 {filmRecipe ? (
                   <FilmImage
                     photoId={shot.id}
@@ -152,8 +170,9 @@ export function UnlimitedQueue({
                 {(shot.status === 'queued' || shot.status === 'error') && (
                   <button
                     type="button"
-                    onClick={() => onRemoveShot(shot.id)}
-                    className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                    onClick={(e) => { e.stopPropagation(); onRemoveShot(shot.id); }}
+                    className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white transition hover:opacity-80"
+                    style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 70%, transparent)' }}
                     aria-label="Remove"
                   >
                     <IconX className="h-3.5 w-3.5" />
@@ -200,6 +219,27 @@ export function UnlimitedQueue({
           {t.filmRoll.fromGallery}
         </button>
       </div>
+
+      {selectedIndex !== null && unlimitedQueue[selectedIndex] && (
+        <PhotoLightbox
+          photoId={unlimitedQueue[selectedIndex].id}
+          photoUrl={unlimitedQueue[selectedIndex].previewUrl}
+          onClose={closeModal}
+          onPrev={goPrev}
+          onNext={goNext}
+          hasPrev={selectedIndex > 0}
+          hasNext={selectedIndex < unlimitedQueue.length - 1}
+          eventName="Captured Moments"
+          photoNumber={selectedIndex + 1}
+          filmRecipe={filmRecipe}
+          theme={theme}
+          onDelete={
+            (unlimitedQueue[selectedIndex].status === 'queued' || unlimitedQueue[selectedIndex].status === 'error')
+            ? () => { onRemoveShot(unlimitedQueue[selectedIndex].id); closeModal(); }
+            : undefined
+          }
+        />
+      )}
     </div>
   );
 }

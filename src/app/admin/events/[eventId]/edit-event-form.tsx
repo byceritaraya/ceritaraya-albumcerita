@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useT } from '@/lib/i18n/use-t';
 
-const THEMES = ['Sage', 'Blush', 'Slate', 'Sand', 'Mauve', 'Ivory'];
+const THEMES = ['Sage', 'Blush', 'Slate', 'Onyx', 'Mauve', 'Ivory'];
 const RETENTION_OPTIONS = [1, 3, 6, 12];
 const CONTRIBUTOR_OPTIONS = [20, 50, 100, 9999];
 const PHOTOS_OPTIONS = [5, 10, 20, 36];
@@ -18,6 +18,7 @@ interface EditEventFormProps {
     max_contributors: number;
     photos_per_guest: number;
     cover_image_url: string | null;
+    raw_cover_image_url: string | null;
     film_recipe_id: string;
   };
   availableRecipes: { id: string; name: string }[];
@@ -59,7 +60,14 @@ export function EditEventForm({ eventId, initialValues, availableRecipes }: Edit
     startTransition(async () => {
       setError(null);
       
-      let coverUrl = coverPreview;
+      let coverUrl = initialValues.raw_cover_image_url;
+      if (coverFile !== null) {
+        // If a new file was selected, use the preview (which is a blob) temporarily, or upload it
+        // Actually, we'll wait for the upload to get the path
+      } else if (coverPreview === null) {
+        // User explicitly removed the cover
+        coverUrl = null;
+      }
       
       if (coverFile) {
         // We have a new file to upload

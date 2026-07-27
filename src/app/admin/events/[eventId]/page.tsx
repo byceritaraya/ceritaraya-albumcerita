@@ -204,6 +204,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
                 max_contributors: e.max_contributors,
                 photos_per_guest: e.photos_per_guest,
                 cover_image_url: finalCoverUrl,
+                raw_cover_image_url: e.cover_image_url,
                 film_recipe_id: e.film_recipe_id ?? '',
               }}
             />
