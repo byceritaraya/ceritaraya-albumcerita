@@ -14,9 +14,9 @@ export class GrainProcessor implements Processor {
     if (grain === 'none') return;
     
     let opacity = 0;
-    if (grain === 'light') opacity = 0.05;
-    if (grain === 'medium') opacity = 0.12;
-    if (grain === 'heavy') opacity = 0.22;
+    if (grain === 'light') opacity = 0.12;
+    if (grain === 'medium') opacity = 0.25;
+    if (grain === 'heavy') opacity = 0.40;
     
     // Generate a noise pattern tile if not already generated
     if (!this.noiseCanvas) {

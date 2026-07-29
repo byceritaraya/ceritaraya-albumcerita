@@ -8,6 +8,7 @@ export interface FilmRecipeSettings {
   warmth: number;
   grain: GrainLevel;
   vignette: VignetteLevel;
+  halation?: boolean;
 }
 
 export interface FilmRecipe {

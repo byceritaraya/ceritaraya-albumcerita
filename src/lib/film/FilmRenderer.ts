@@ -1,8 +1,8 @@
 import { FilmRecipeSettings } from './types';
 import { Processor } from './processors/Processor';
-import { ColorProcessor } from './processors/ColorProcessor';
-import { ToneProcessor } from './processors/ToneProcessor';
+import { BaseAdjustmentProcessor } from './processors/BaseAdjustmentProcessor';
 import { GrainProcessor } from './processors/GrainProcessor';
+import { HalationProcessor } from './processors/HalationProcessor';
 import { VignetteProcessor } from './processors/VignetteProcessor';
 
 // ─── Cache ─────────────────────────────────────────────────────────────────────
@@ -48,9 +48,9 @@ interface RenderTask {
 
 export class FilmRenderer {
   private static readonly processors: Processor[] = [
-    new ColorProcessor(),
-    new ToneProcessor(),
+    new BaseAdjustmentProcessor(),
     new GrainProcessor(),
+    new HalationProcessor(),
     new VignetteProcessor(),
   ];
 

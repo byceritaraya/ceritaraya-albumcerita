@@ -85,7 +85,7 @@ const en = {
   // ─── Album View ───────────────────────────────────────────────────────────────
   albumView: {
     stats: {
-      momentTakers: 'Moment Takers',
+      momentTakers: 'Guests',
       moments: 'Moments',
       shotsLeft: 'Shots Left',
       hidden: 'Hidden',
@@ -191,7 +191,7 @@ const en = {
     title: 'Captured Moments',
     shown: (n: number) => `${n} shown`,
     totalPhotos: 'Total Moments',
-    momentTakers: 'Moment Takers',
+    momentTakers: 'Guests',
     emptyTitle: 'The stage is set.',
     emptyBody: 'Moments will appear here as guests start capturing.',
   },

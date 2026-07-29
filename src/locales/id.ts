@@ -85,7 +85,7 @@ const id: Translations = {
   // ─── Album View ───────────────────────────────────────────────────────────────
   albumView: {
     stats: {
-      momentTakers: 'Moment Takers',
+      momentTakers: 'Tamu',
       moments: 'Momen',
       shotsLeft: 'Sisa Frame',
       hidden: 'Disembunyikan',
@@ -191,7 +191,7 @@ const id: Translations = {
     title: 'Momen Terabadikan',
     shown: (n: number) => `${n} ditampilkan`,
     totalPhotos: 'Total Momen',
-    momentTakers: 'Moment Takers',
+    momentTakers: 'Tamu',
     emptyTitle: 'Panggung sudah siap.',
     emptyBody: 'Momen akan muncul di sini saat tamu mulai mengabadikannya.',
   },
