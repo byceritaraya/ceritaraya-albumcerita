@@ -88,7 +88,7 @@ export function GuestAuth({
 
       {/* Language switcher */}
       <div className="absolute top-4 right-4 z-20">
-        <LangSwitcher variant="dark" />
+        <LangSwitcher className="text-white/80 hover:text-white" />
       </div>
 
       {/* Content */}

@@ -32,6 +32,7 @@ export default async function EventPage({ params }: PageProps) {
       cover_image_url,
       theme,
       film_recipes (
+        name,
         settings
       )
     `)
@@ -122,6 +123,8 @@ export default async function EventPage({ params }: PageProps) {
     }
   }
 
+  const filmRecipeData = event.film_recipes as unknown as { name: string, settings: FilmRecipeSettings } | null;
+
   return (
     <div className="min-h-screen bg-[var(--bg-secondary)] flex flex-col items-center py-12 px-4">
       <div className="w-full max-w-lg bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--bg-tertiary)] overflow-hidden">
@@ -144,7 +147,8 @@ export default async function EventPage({ params }: PageProps) {
           galleryPhotos={galleryPhotos}
           totalPhotos={totalPhotos ?? 0}
           totalContributors={totalContributors ?? 0}
-          filmRecipe={(event.film_recipes as unknown as { settings: FilmRecipeSettings } | null)?.settings ?? null}
+          filmRecipe={filmRecipeData?.settings ?? null}
+          filmRecipeName={filmRecipeData?.name}
           coverImageUrl={event.cover_image_url ?? undefined}
           theme={event.theme ?? undefined}
         />

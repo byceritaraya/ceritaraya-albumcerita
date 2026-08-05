@@ -160,6 +160,7 @@ export default async function GuestPage({ params }: PageProps) {
         photosPerGuest={event.photos_per_guest}
         currentContributorToken={contributorId}
         filmRecipe={(event.film_recipes as unknown as { settings: FilmRecipeSettings } | null)?.settings ?? null}
+        filmRecipeName={(event.film_recipes as unknown as { name: string } | null)?.name}
         slug={slug}
       />
     </>

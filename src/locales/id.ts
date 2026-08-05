@@ -123,11 +123,11 @@ const id: Translations = {
   // ─── Film Roll ───────────────────────────────────────────────────────────────
   filmRoll: {
     title: 'Rol Film',
-    framesRemaining: (n: number) => `${n} Frame Tersisa`,
+    framesRemaining: (n: number) => `Sisa ${n} Frame`,
     lastFrame: 'Frame Terakhir!',
     rollFull: 'Rol filmmu penuh — waktunya dibagikan.',
     momentCaptured: '✓ Momen Terabadikan',
-    viewFilmRoll: 'Cuci Rol Film',
+    viewFilmRoll: 'Kembangkan Film',
     reviewTitle: 'Rol Kamu',
     reviewSubtitle: (n: number) => `${n} frame terabadikan`,
     shareRoll: 'Bagikan Rol Kamu',
@@ -137,12 +137,16 @@ const id: Translations = {
     noFrames: 'Belum ada frame yang terabadikan.',
     rollFullSubtitle: 'Kamu sudah menggunakan semua frame. Siap dibagikan?',
     takePhoto: 'Abadikan Frame',
+    goToFilmLab: 'Masuk ke Film Lab',
+    continueToFilmLab: 'Lanjut ke Film Lab',
     fromGallery: 'Dari Galeri',
+    captureMore: 'Abadikan Lebih Banyak Momen',
+    addFromGallery: '+ Tambah dari Galeri',
   },
 
   // ─── Film Processing ────────────────────────────────────────────────────────
   filmProcessing: {
-    developMyFilm: 'Cuci Rol Film',
+    developMyFilm: 'Kembangkan Film',
     preparing: 'Mempersiapkan Rol Film...',
     developing: 'Memproses Negatif Film...',
     applying: 'Menerapkan Resep Film...',

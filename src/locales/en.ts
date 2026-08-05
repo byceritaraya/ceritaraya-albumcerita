@@ -137,7 +137,11 @@ const en = {
     noFrames: 'No frames captured yet.',
     rollFullSubtitle: "You've captured all your frames. Ready to share?",
     takePhoto: 'Capture Frame',
+    goToFilmLab: 'Go to Film Lab',
+    continueToFilmLab: 'Continue to Film Lab',
     fromGallery: 'From Gallery',
+    captureMore: 'Capture More Moments',
+    addFromGallery: '+ Add from Gallery',
   },
 
   // ─── Film Processing ────────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ interface EventPageClientProps {
   totalPhotos: number;
   totalContributors: number;
   filmRecipe?: FilmRecipeSettings | null;
+  filmRecipeName?: string;
   coverImageUrl?: string;
   theme?: string;
 }
@@ -27,6 +28,7 @@ export function EventPageClient({
   totalPhotos,
   totalContributors,
   filmRecipe,
+  filmRecipeName,
   coverImageUrl,
   theme,
 }: EventPageClientProps) {
@@ -47,6 +49,7 @@ export function EventPageClient({
           photosPerGuest={photosPerGuest}
           onUploadComplete={handleUploadComplete}
           filmRecipe={filmRecipe}
+          filmRecipeName={filmRecipeName}
           coverImageUrl={coverImageUrl}
           theme={theme}
         />

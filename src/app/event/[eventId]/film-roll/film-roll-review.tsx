@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useT } from '@/lib/i18n/use-t';
 import { FilmFrame, GlobalMessage } from './types';
-import { IconFilmRoll, IconSpinner, IconCheck, IconRefreshCcw, IconUpload } from './unlimited-queue';
+import { IconSpinner, IconCheck, IconRefreshCcw, IconUpload } from './film-roll-queue';
 import { PhotoLightbox } from '@/app/_components/photo-lightbox';
 
 interface FilmRollReviewProps {
@@ -40,12 +40,9 @@ export function FilmRollReview({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-heading text-2xl text-[var(--text-primary)]">{t.filmRoll.reviewTitle}</h2>
-          <p className="text-sm text-[var(--text-muted)] mt-1">{t.filmRoll.reviewSubtitle(frames.length)}</p>
-        </div>
-        <IconFilmRoll className="h-8 w-8 text-[var(--theme-primary)] opacity-20" />
+      <div>
+        <h2 className="font-heading text-2xl text-[var(--text-primary)]">{t.filmRoll.reviewTitle}</h2>
+        <p className="text-sm text-[var(--text-muted)] mt-1">{t.filmRoll.reviewSubtitle(frames.length)}</p>
       </div>
 
       {globalMessage && (

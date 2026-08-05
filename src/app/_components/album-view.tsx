@@ -24,6 +24,7 @@ export interface AlbumViewProps {
   role: 'host' | 'guest' | 'public';
   eventId: string;          // legacy event_id for upload actions
   eventName: string;
+  eventDate?: string;
   hostName?: string;
   coverImageUrl?: string;
   theme?: string;
@@ -35,64 +36,15 @@ export interface AlbumViewProps {
   photosUsed?: number;
   photosPerGuest?: number;
   currentContributorToken?: string;
-  // Host-only
   guestUrl?: string;
   slug?: string;
   isPublished?: boolean;
   publicUrl?: string;
   filmRecipe?: FilmRecipeSettings | null;
+  filmRecipeName?: string;
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-
-function IconUsers({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
-    </svg>
-  );
-}
-
-function IconImage({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0 0 21 18v-1.94l-2.69-2.689a1.5 1.5 0 0 0-2.12 0l-.88.879.97.97a.75.75 0 1 1-1.06 1.06l-5.16-5.159a1.5 1.5 0 0 0-2.12 0L3 16.061Zm10.125-7.81a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function IconCamera({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z" />
-      <path fillRule="evenodd" d="M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function IconFilmRoll({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M3.5 2A1.5 1.5 0 0 0 2 3.5v17A1.5 1.5 0 0 0 3.5 22h17a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 20.5 2h-17ZM3.5 4h3v3h-3V4Zm0 5h3v3h-3V9Zm0 5h3v3h-3v-3Zm13.5 3h3v-3h-3v3Zm0-5h3V9h-3v3Zm0-5h3V4h-3v3ZM9 4v16h6V4H9Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function IconShare({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M15.75 4.5a3 3 0 1 1 .825 2.066l-8.421 4.679a3.002 3.002 0 0 1 0 1.51l8.421 4.679a3 3 0 1 1-.729 1.31l-8.421-4.678a3 3 0 1 1 0-4.132l8.421-4.679a3 3 0 0 1-.096-.755Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function IconHeart({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
-    </svg>
-  );
-}
 
 function IconEye({ className }: { className?: string }) {
   return (
@@ -119,15 +71,134 @@ function IconTrash({ className }: { className?: string }) {
   );
 }
 
-
-// ─── Stat Item ────────────────────────────────────────────────────────────────
-
-function StatItem({ icon, value, label }: { icon: React.ReactNode; value: number | string; label: string }) {
+function IconCamera({ className }: { className?: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 min-w-[64px]">
-      <div className="text-[var(--theme-primary)]">{icon}</div>
-      <span className="text-lg font-bold text-[var(--text-primary)] leading-none">{value}</span>
-      <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] text-center leading-tight">{label}</span>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 9a3.75 3.75 0 1 0 0 7.5A3.75 3.75 0 0 0 12 9Z" />
+      <path fillRule="evenodd" d="M9.344 3.071a49.52 49.52 0 0 1 5.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 0 1-3 3h-15a3 3 0 0 1-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 0 0 1.11-.71l.822-1.315a2.942 2.942 0 0 1 2.332-1.39ZM6.75 12.75a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0Zm12-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+// ─── Editorial Stat Item ──────────────────────────────────────────────────────
+
+function StatItem({ value, label }: { value: number | string; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <span className="text-3xl font-light tracking-tight text-[var(--text-primary)] leading-none tabular-nums">{value}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] text-[var(--text-muted)] font-medium">{label}</span>
+    </div>
+  );
+}
+
+// ─── Photo Card (shared grid item) ───────────────────────────────────────────
+
+interface PhotoCardProps {
+  photo: AlbumPhoto;
+  index: number;
+  isSelectMode: boolean;
+  selectedPhotoIds: Set<string>;
+  stableFilmRecipe: FilmRecipeSettings | null;
+  role: string;
+  isPublished?: boolean;
+  currentContributorToken?: string;
+  togglingId: string | null;
+  onOpen: (i: number) => void;
+  onToggleSelection: (id: string) => void;
+  onToggleVisibility: (photo: AlbumPhoto) => void;
+  onDeleteRequest: (photo: AlbumPhoto) => void;
+}
+
+function PhotoCard({
+  photo,
+  index,
+  isSelectMode,
+  selectedPhotoIds,
+  stableFilmRecipe,
+  role,
+  isPublished,
+  currentContributorToken,
+  togglingId,
+  onOpen,
+  onToggleSelection,
+  onToggleVisibility,
+  onDeleteRequest,
+}: PhotoCardProps) {
+  const { t } = useT();
+  const isSelected = selectedPhotoIds.has(photo.id);
+
+  return (
+    <div className="relative aspect-square group">
+      <button
+        onClick={() => {
+          if (isSelectMode) onToggleSelection(photo.id);
+          else onOpen(index);
+        }}
+        className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && isSelected ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
+      >
+        {stableFilmRecipe ? (
+          <FilmImage
+            photoId={photo.id}
+            src={photo.original_url}
+            recipeSettings={stableFilmRecipe}
+            alt={`Photo by ${photo.guest_name}`}
+            className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && isSelected ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photo.original_url}
+            alt={`Photo by ${photo.guest_name}`}
+            className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && isSelected ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+            loading="lazy"
+          />
+        )}
+      </button>
+
+      {/* Checkbox for Select Mode */}
+      {isSelectMode && (
+        <div className="absolute top-2 left-2 pointer-events-none">
+          <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]' : 'border-white/80 bg-black/20'}`}>
+            {isSelected && (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Host-only: Hide/Show toggle */}
+      {role === 'host' && !isSelectMode && (
+        <button
+          onClick={() => onToggleVisibility(photo)}
+          disabled={togglingId === photo.id}
+          className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
+          title={photo.is_hidden ? t.albumView.unhide : t.albumView.hide}
+        >
+          {togglingId === photo.id ? (
+            <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+            </svg>
+          ) : photo.is_hidden ? (
+            <IconEyeOff className="h-3.5 w-3.5" />
+          ) : (
+            <IconEye className="h-3.5 w-3.5" />
+          )}
+        </button>
+      )}
+
+      {/* Guest-only: Delete own photo */}
+      {role === 'guest' && !isPublished && photo.guest_token === currentContributorToken && (
+        <button
+          onClick={() => onDeleteRequest(photo)}
+          className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+          title={t.deleteModal.title}
+        >
+          <IconTrash className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 }
@@ -138,6 +209,7 @@ export function AlbumView({
   role,
   eventId,
   eventName,
+  eventDate,
   hostName,
   coverImageUrl,
   theme,
@@ -153,6 +225,7 @@ export function AlbumView({
   isPublished,
   publicUrl,
   filmRecipe,
+  filmRecipeName,
 }: AlbumViewProps) {
   const { t } = useT();
 
@@ -165,8 +238,6 @@ export function AlbumView({
 
   // Stable memoized recipe — prevents new object references on re-render from
   // causing redundant FilmRenderer.render() calls in child FilmImage components.
-  // FilmImage also guards with JSON.stringify, but a stable reference avoids
-  // even the effect setup/teardown overhead.
   const stableFilmRecipe = useMemo(
     () => filmRecipe ?? null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -174,7 +245,6 @@ export function AlbumView({
   );
 
   // Revoke all rendered Blob URLs when AlbumView unmounts.
-  // This is the canonical cleanup point for FilmRenderer's cache.
   useEffect(() => {
     return () => {
       FilmRenderer.clearCache();
@@ -184,11 +254,11 @@ export function AlbumView({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'latest' | 'contributor'>('latest');
-  
+
   // Bulk selection states
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set());
-  
+
   // Deletion states
   const [photoToDelete, setPhotoToDelete] = useState<AlbumPhoto | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -197,12 +267,12 @@ export function AlbumView({
   useEffect(() => {
     setLocalPhotosUsed(photosUsed);
   }, [photosUsed]);
-  
+
   // Publish states
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  
+
   // Download states
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadingContributor, setDownloadingContributor] = useState<string | null>(null);
@@ -211,13 +281,14 @@ export function AlbumView({
   const safeTheme = theme && APPROVED_THEMES.includes(theme) ? theme : 'Sage';
   const themeClass = `theme-${safeTheme.toLowerCase()}`;
   const shotsLeft = photosPerGuest > 0 ? Math.max(0, photosPerGuest - localPhotosUsed) : null;
-  // Hosts see all photos. Guests see non-hidden photos from others + all their own (for delete).
+
+  // Hosts see all photos. Guests see non-hidden photos from others + all their own.
   const baseVisiblePhotos = role === 'host'
     ? photos
     : photos.filter(p => !p.is_hidden || p.guest_token === currentContributorToken);
-  
+
   const hiddenPhotosCount = photos.filter(p => p.is_hidden).length;
-  
+
   const visiblePhotos = [...baseVisiblePhotos].sort((a, b) => {
     if (sortBy === 'latest') {
       return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
@@ -302,7 +373,6 @@ export function AlbumView({
       })
     : null;
 
-
   async function handleToggle(photo: AlbumPhoto) {
     if (!slug) return;
     setTogglingId(photo.id);
@@ -357,7 +427,7 @@ export function AlbumView({
       await navigator.clipboard.writeText(guestUrl);
     }
   }
-  
+
   async function copyPublicLink() {
     if (!publicUrl) return;
     try {
@@ -381,7 +451,6 @@ export function AlbumView({
     } catch (err) {
       console.error(err);
     } finally {
-      // Small timeout to allow the browser to start download
       setTimeout(() => setIsDownloading(false), 3000);
     }
   }
@@ -402,128 +471,78 @@ export function AlbumView({
     }
   }
 
+  // Shared photo card props
+  const sharedCardProps = {
+    isSelectMode,
+    selectedPhotoIds,
+    stableFilmRecipe,
+    role,
+    isPublished,
+    currentContributorToken,
+    togglingId,
+    onOpen: openModal,
+    onToggleSelection: toggleSelection,
+    onToggleVisibility: handleToggle,
+    onDeleteRequest: setPhotoToDelete,
+  };
+
   return (
     <div className={`relative min-h-[100dvh] bg-[var(--bg-primary)] ${themeClass}`}>
-      {/* ── Top bar ── */}
+
+      {/* ── Utility Bar (top-right) ── */}
       {selectedIndex === null && (
-        <div className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-5 pt-4 pb-12"
-             style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 35%, rgba(255,255,255,0.65) 65%, rgba(255,255,255,0.35) 85%, transparent 100%)' }}>
-          <div className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 text-[var(--theme-primary)]">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-            </svg>
-          </div>
-          <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-            <LangSwitcher className="mr-3" />
-            {role !== 'public' && (
-              <>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--theme-primary)]/10">
-                  <IconUsers className="h-3.5 w-3.5 text-[var(--theme-primary)]" />
-                </div>
-                <span className="font-medium text-xs text-[var(--text-secondary)]">
-                  {role === 'host' ? (hostName || t.albumView.roleHost) : (contributorName || t.albumView.roleGuest)}
-                </span>
-                <span className="text-[var(--text-muted)] text-xs">
-                  · {role === 'host' ? t.albumView.roleHost : t.albumView.roleGuest}
-                </span>
-              </>
-            )}
-          </div>
+        <div className="fixed top-6 right-6 z-30">
+          <LangSwitcher />
         </div>
       )}
 
       {/* ── Cover Hero ── */}
-      <div className="relative w-full h-[50dvh] shrink-0 pointer-events-none">
+      <div className="relative w-full h-[65dvh] shrink-0 pointer-events-none">
         {coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverImageUrl} alt="Event Cover" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[var(--theme-primary)] to-[var(--theme-secondary)] opacity-50" />
         )}
-        <div 
-          className="absolute inset-0" 
+
+        {/* Gradient: strong bottom fade to background color for smooth transition */}
+        <div
+          className="absolute inset-0"
           style={{
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(var(--theme-bg-rgb),1) 100%)'
+            background: 'linear-gradient(to bottom, transparent 0%, transparent 75%, rgba(var(--theme-bg-rgb),0.4) 88%, rgba(var(--theme-bg-rgb),1) 100%)'
           }}
         />
+
+        {/* Event Identity (Title, Date, Stats) overlaid on hero */}
+        <div className="absolute bottom-0 inset-x-0 px-6 pb-0 translate-y-24 pointer-events-none flex flex-col items-center text-center">
+          <h1 className="font-heading text-3xl font-light leading-tight tracking-tight text-[var(--text-primary)] text-balance">
+            {eventName}
+          </h1>
+          {eventDate && (
+            <p className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-[var(--text-secondary)] font-medium">
+              {eventDate}
+            </p>
+          )}
+          
+          {/* Editorial Stats (inside hero) */}
+          <div className="mt-4 flex items-center justify-center gap-14 pointer-events-auto">
+            <StatItem value={totalContributors} label={t.albumView.stats.momentTakers} />
+            <StatItem value={totalPhotos} label={t.albumView.stats.moments} />
+          </div>
+        </div>
       </div>
 
       {/* ── Content ── */}
-      <div className="relative z-10 px-5 pb-12 flex-1 -mt-8">
-
-        {/* Event title */}
-        <h1 className="font-heading text-4xl leading-none tracking-tight text-[var(--text-primary)] text-balance text-center">
-          {eventName}
-        </h1>
-
-
-        {/* ── Stats row ── */}
-        <div className={`mt-8 flex items-center ${role === 'host' ? 'justify-center gap-8' : 'justify-between'} overflow-x-auto py-2 no-scrollbar`}>
-          <StatItem icon={<IconUsers className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalContributors} label={t.albumView.stats.momentTakers} />
-          <div className="w-px h-10 bg-[var(--theme-secondary)] opacity-30 self-center" />
-          <StatItem icon={<IconImage className="h-4 w-4 text-[var(--theme-primary)]" />} value={totalPhotos} label={t.albumView.stats.moments} />
-          
-          {role === 'guest' && shotsLeft !== null && (
-            <>
-              <div className="w-px h-10 bg-[var(--theme-secondary)] opacity-30 self-center" />
-              <StatItem icon={<IconFilmRoll className="h-4 w-4 text-[var(--theme-primary)]" />} value={shotsLeft} label={t.albumView.stats.shotsLeft} />
-            </>
-          )}
-
-          {role === 'host' && (
-            <>
-              <div className="w-px h-10 bg-[var(--theme-secondary)] opacity-30 self-center" />
-              <StatItem icon={<IconEyeOff className="h-4 w-4" />} value={hiddenPhotosCount} label={t.albumView.stats.hidden} />
-            </>
-          )}
-        </div>
-
-        {/* ── Publish Notice (Host Only) ── */}
-        {role === 'host' && isPublished && publicUrl && (
-          <div className="mt-6 rounded-xl border border-[var(--bg-tertiary)] bg-white/60 backdrop-blur-md p-5 shadow-sm text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[var(--theme-primary)]/10 px-3 py-1 mb-3">
-              <span className="h-2 w-2 rounded-full bg-[var(--theme-primary)]"></span>
-              <span className="text-xs font-semibold text-[var(--theme-primary)]">{t.albumView.published}</span>
-            </div>
-            <p className="text-sm text-[var(--text-secondary)] mb-2">{t.albumView.publicAlbum}</p>
-            <p className="font-mono text-sm font-medium text-[var(--text-primary)] mb-4">{publicUrl}</p>
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={copyPublicLink}
-                className="flex items-center gap-2 rounded-xl bg-[var(--theme-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--theme-secondary)]"
-              >
-                {copiedLink ? (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                      <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
-                    </svg>
-                    {t.albumView.linkCopied}
-                  </>
-                ) : t.albumView.copyLink}
-              </button>
-              <button
-                onClick={handleUnpublish}
-                disabled={isPublishing}
-                className="flex items-center gap-2 rounded-xl border border-[var(--bg-tertiary)] bg-white px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"
-              >
-                {isPublishing ? t.albumView.saving : t.albumView.unpublish}
-              </button>
-            </div>
-          </div>
-        )}
+      <div className="relative z-10 px-5 pb-12 flex-1 pt-28">
 
         {/* ── Action buttons / Upload Panel ── */}
-        <div className="mt-5">
+        <div>
           {isPublished ? (
             <button
               onClick={handleDownloadAlbum}
               disabled={isDownloading}
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] active:scale-[0.97] disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex h-14 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] active:scale-[0.97] disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
-              </svg>
               {isDownloading ? t.albumView.preparingDownload : t.albumView.downloadAlbum}
             </button>
           ) : role === 'guest' ? (
@@ -533,6 +552,7 @@ export function AlbumView({
               photosPerGuest={photosPerGuest}
               onUploadComplete={handleUploadComplete}
               filmRecipe={stableFilmRecipe}
+              filmRecipeName={filmRecipeName}
               coverImageUrl={coverImageUrl}
               theme={safeTheme.toLowerCase()}
             />
@@ -542,9 +562,8 @@ export function AlbumView({
               {guestUrl ? (
                 <button
                   onClick={shareGuestLink}
-                  className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
+                  className="flex h-14 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
                 >
-                  <IconShare className="h-4 w-4" />
                   {t.albumView.shareGuestLink}
                 </button>
               ) : (
@@ -553,7 +572,7 @@ export function AlbumView({
               {!isPublished ? (
                 <button
                   onClick={() => setShowPublishModal(true)}
-                  className="flex h-14 w-full items-center justify-center gap-2 rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-primary)] px-6 text-sm font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
+                  className="flex h-14 w-full items-center justify-center rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-primary)] px-6 text-sm font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
                 >
                   {t.albumView.publishAlbum}
                 </button>
@@ -564,18 +583,41 @@ export function AlbumView({
           ) : null}
         </div>
 
-        {/* ── Captured Moments ── */}
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-4">
-            {role === 'host' && (
-              <h2 className="font-heading text-xl text-[var(--text-primary)]">{t.albumView.capturedMoments}</h2>
-            )}
+        {/* ── Publish Notice (Host Only, inline) ── */}
+        {role === 'host' && isPublished && publicUrl && (
+          <div className="mt-6 py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--theme-primary)] flex-shrink-0" />
+              <span className="text-xs uppercase tracking-[0.15em] font-medium text-[var(--theme-primary)]">{t.albumView.published}</span>
+            </div>
+            <p className="font-mono text-sm text-[var(--text-secondary)] mb-3 pl-3.5 truncate">{publicUrl}</p>
+            <div className="flex items-center gap-4 pl-3.5">
+              <button
+                onClick={copyPublicLink}
+                className="text-sm font-medium text-[var(--theme-primary)] underline underline-offset-2 hover:opacity-70 transition-opacity"
+              >
+                {copiedLink ? t.albumView.linkCopied : t.albumView.copyLink}
+              </button>
+              <button
+                onClick={handleUnpublish}
+                disabled={isPublishing}
+                className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
+              >
+                {isPublishing ? t.albumView.saving : t.albumView.unpublish}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Gallery ── */}
+        <div className="mt-12">
+          <div className="flex items-center justify-between mb-5">
             {role === 'host' && visiblePhotos.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as 'latest' | 'contributor')}
-                  className="text-xs text-[var(--text-secondary)] font-medium bg-transparent outline-none focus:ring-0 border-none cursor-pointer py-1 pl-2 pr-6 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors"
+                  className="text-xs text-[var(--text-secondary)] font-medium bg-transparent outline-none focus:ring-0 border-none cursor-pointer py-1 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors"
                   style={{ WebkitAppearance: 'none' }}
                 >
                   <option value="latest">{t.albumView.sortLatest}</option>
@@ -596,109 +638,27 @@ export function AlbumView({
 
           {/* Empty state */}
           {visiblePhotos.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <IconCamera className="h-10 w-10 text-[var(--theme-primary)]/25 mb-4" />
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <IconCamera className="h-9 w-9 text-[var(--theme-primary)]/20 mb-5" />
               <p className="text-base font-semibold text-[var(--text-primary)] mb-1">{t.albumView.emptyTitle}</p>
               {role === 'guest' && <p className="text-sm text-[var(--text-muted)] max-w-[220px] leading-relaxed">{t.albumView.emptyGuest}</p>}
               {role === 'host' && <p className="text-sm text-[var(--text-muted)] max-w-[220px] leading-relaxed">{t.albumView.emptyHost}</p>}
             </div>
           )}
 
-          {/* Photo grid or Groups */}
+          {/* Photo grid or groups */}
           {visiblePhotos.length > 0 && (
             <>
               {role === 'guest' ? (
-                <div className="space-y-8">
+                <div className="space-y-10">
                   {myPhotos.length > 0 && (
                     <div>
-                      <h3 className="font-heading text-lg text-[var(--text-primary)] mb-3">{t.albumView.yourMoments}</h3>
+                      <p className="text-[9px] uppercase tracking-[0.18em] text-[var(--text-muted)] font-medium mb-4">{t.albumView.yourMoments}</p>
                       <div className="grid grid-cols-2 gap-2">
                         {myPhotos.map((photo) => {
                           const index = visiblePhotos.findIndex(p => p.id === photo.id);
                           return (
-                            
-                <div key={photo.id} className="relative aspect-square group">
-                  <button
-                    onClick={() => {
-                      if (isSelectMode) toggleSelection(photo.id);
-                      else openModal(index);
-                    }}
-                    className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
-                  >
-                    {stableFilmRecipe ? (
-                      <FilmImage
-                        photoId={photo.id}
-                        src={photo.original_url}
-                        recipeSettings={stableFilmRecipe}
-                        alt={`Photo by ${photo.guest_name}`}
-                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                      />
-                    ) : (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={photo.original_url}
-                        alt={`Photo by ${photo.guest_name}`}
-                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                        loading="lazy"
-                      />
-                    )}
-                    {/* "Taken by" label */}
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
-                          <IconUsers className="h-2.5 w-2.5 text-white" />
-                        </div>
-                        <p className="text-[10px] font-medium text-white truncate">{t.albumView.takenBy(photo.guest_name)}</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Checkbox for Select Mode */}
-                  {isSelectMode && (
-                    <div className="absolute top-2 left-2 pointer-events-none">
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${selectedPhotoIds.has(photo.id) ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]' : 'border-white/80 bg-black/20'}`}>
-                        {selectedPhotoIds.has(photo.id) && (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Host-only: Hide/Show toggle (hidden in select mode) */}
-                  {(role as string) === 'host' && !isSelectMode && (
-                    <button
-                      onClick={() => handleToggle(photo)}
-                      disabled={togglingId === photo.id}
-                      className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
-                      title={photo.is_hidden ? t.albumView.unhide : t.albumView.hide}
-                    >
-                      {togglingId === photo.id ? (
-                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-                        </svg>
-                      ) : photo.is_hidden ? (
-                        <IconEyeOff className="h-3.5 w-3.5" />
-                      ) : (
-                        <IconEye className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  )}
-
-                  {/* Guest-only: Delete own photo */}
-                  {(role as string) === 'guest' && !isPublished && photo.guest_token === currentContributorToken && (
-                    <button
-                      onClick={() => setPhotoToDelete(photo)}
-                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                      title={t.deleteModal.title}
-                    >
-                      <IconTrash className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
+                            <PhotoCard key={photo.id} photo={photo} index={index} {...sharedCardProps} />
                           );
                         })}
                       </div>
@@ -708,112 +668,26 @@ export function AlbumView({
               ) : sortBy === 'latest' ? (
                 <div className="grid grid-cols-2 gap-2">
                   {visiblePhotos.map((photo, index) => (
-                    
-                <div key={photo.id} className="relative aspect-square group">
-                  <button
-                    onClick={() => {
-                      if (isSelectMode) toggleSelection(photo.id);
-                      else openModal(index);
-                    }}
-                    className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
-                  >
-                    {stableFilmRecipe ? (
-                      <FilmImage
-                        photoId={photo.id}
-                        src={photo.original_url}
-                        recipeSettings={stableFilmRecipe}
-                        alt={`Photo by ${photo.guest_name}`}
-                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                      />
-                    ) : (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={photo.original_url}
-                        alt={`Photo by ${photo.guest_name}`}
-                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                        loading="lazy"
-                      />
-                    )}
-                    {/* "Taken by" label */}
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
-                          <IconUsers className="h-2.5 w-2.5 text-white" />
-                        </div>
-                        <p className="text-[10px] font-medium text-white truncate">{t.albumView.takenBy(photo.guest_name)}</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Checkbox for Select Mode */}
-                  {isSelectMode && (
-                    <div className="absolute top-2 left-2 pointer-events-none">
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${selectedPhotoIds.has(photo.id) ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]' : 'border-white/80 bg-black/20'}`}>
-                        {selectedPhotoIds.has(photo.id) && (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Host-only: Hide/Show toggle (hidden in select mode) */}
-                  {(role as string) === 'host' && !isSelectMode && (
-                    <button
-                      onClick={() => handleToggle(photo)}
-                      disabled={togglingId === photo.id}
-                      className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
-                      title={photo.is_hidden ? t.albumView.unhide : t.albumView.hide}
-                    >
-                      {togglingId === photo.id ? (
-                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-                        </svg>
-                      ) : photo.is_hidden ? (
-                        <IconEyeOff className="h-3.5 w-3.5" />
-                      ) : (
-                        <IconEye className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  )}
-
-                  {/* Guest-only: Delete own photo */}
-                  {(role as string) === 'guest' && !isPublished && photo.guest_token === currentContributorToken && (
-                    <button
-                      onClick={() => setPhotoToDelete(photo)}
-                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                      title={t.deleteModal.title}
-                    >
-                      <IconTrash className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
+                    <PhotoCard key={photo.id} photo={photo} index={index} {...sharedCardProps} />
                   ))}
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {sortedGroups?.map(([guestName, groupPhotos]) => (
-                    <div key={guestName} className="flex flex-col gap-3">
-                      <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-[var(--theme-primary)]">
-                          <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
-                        </svg>
-                        <h3 className="font-heading text-lg text-[var(--text-primary)] leading-none">{guestName}</h3>
-                        <span className="text-xs font-medium bg-[var(--bg-tertiary)] text-[var(--text-secondary)] px-2 py-0.5 rounded-full ml-1">
-                          {t.albumView.moment(groupPhotos.length)}
-                        </span>
+                    <div key={guestName} className="flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-baseline gap-2">
+                          <h3 className="font-heading text-lg text-[var(--text-primary)] leading-none">{guestName}</h3>
+                          <span className="text-[9px] uppercase tracking-[0.15em] text-[var(--text-muted)] font-medium">
+                            {t.albumView.moment(groupPhotos.length)}
+                          </span>
+                        </div>
                         {role === 'host' && (
                           <button
                             onClick={() => handleDownloadContributor(guestName)}
                             disabled={downloadingContributor === guestName}
-                            className="ml-auto text-xs flex items-center gap-1 font-semibold bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] px-3 py-1.5 rounded-full hover:bg-[var(--theme-primary)]/20 transition disabled:opacity-50"
+                            className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--theme-primary)] transition-colors disabled:opacity-50"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-                              <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3a.75.75 0 0 1 .75-.75Zm-9 13.5a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
-                            </svg>
                             {downloadingContributor === guestName ? t.albumView.preparingDownload : t.albumView.download}
                           </button>
                         )}
@@ -822,89 +696,7 @@ export function AlbumView({
                         {groupPhotos.map((photo) => {
                           const index = visiblePhotos.findIndex(p => p.id === photo.id);
                           return (
-                            
-                <div key={photo.id} className="relative aspect-square group">
-                  <button
-                    onClick={() => {
-                      if (isSelectMode) toggleSelection(photo.id);
-                      else openModal(index);
-                    }}
-                    className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
-                  >
-                    {stableFilmRecipe ? (
-                      <FilmImage
-                        photoId={photo.id}
-                        src={photo.original_url}
-                        recipeSettings={stableFilmRecipe}
-                        alt={`Photo by ${photo.guest_name}`}
-                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                      />
-                    ) : (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={photo.original_url}
-                        alt={`Photo by ${photo.guest_name}`}
-                        className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && selectedPhotoIds.has(photo.id) ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-                        loading="lazy"
-                      />
-                    )}
-                    {/* "Taken by" label */}
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[var(--theme-primary)]/80 via-[var(--theme-primary)]/30 to-transparent pt-8 pb-2 px-2.5 rounded-b-2xl">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-4 w-4 rounded-full bg-white/40 flex-shrink-0 flex items-center justify-center">
-                          <IconUsers className="h-2.5 w-2.5 text-white" />
-                        </div>
-                        <p className="text-[10px] font-medium text-white truncate">{t.albumView.takenBy(photo.guest_name)}</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Checkbox for Select Mode */}
-                  {isSelectMode && (
-                    <div className="absolute top-2 left-2 pointer-events-none">
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${selectedPhotoIds.has(photo.id) ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]' : 'border-white/80 bg-black/20'}`}>
-                        {selectedPhotoIds.has(photo.id) && (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Host-only: Hide/Show toggle (hidden in select mode) */}
-                  {(role as string) === 'host' && !isSelectMode && (
-                    <button
-                      onClick={() => handleToggle(photo)}
-                      disabled={togglingId === photo.id}
-                      className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white backdrop-blur-sm transition disabled:opacity-50 ${photo.is_hidden ? 'bg-[var(--text-muted)]/80 hover:bg-[var(--text-muted)]' : 'bg-[var(--theme-primary)]/80 hover:bg-[var(--theme-primary)]'}`}
-                      title={photo.is_hidden ? t.albumView.unhide : t.albumView.hide}
-                    >
-                      {togglingId === photo.id ? (
-                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-                        </svg>
-                      ) : photo.is_hidden ? (
-                        <IconEyeOff className="h-3.5 w-3.5" />
-                      ) : (
-                        <IconEye className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  )}
-
-                  {/* Guest-only: Delete own photo */}
-                  {(role as string) === 'guest' && !isPublished && photo.guest_token === currentContributorToken && (
-                    <button
-                      onClick={() => setPhotoToDelete(photo)}
-                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                      title={t.deleteModal.title}
-                    >
-                      <IconTrash className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
+                            <PhotoCard key={photo.id} photo={photo} index={index} {...sharedCardProps} />
                           );
                         })}
                       </div>
@@ -916,13 +708,8 @@ export function AlbumView({
           )}
         </div>
 
-        {/* ── Footer ── */}
-        <div className="mt-12 flex items-end justify-between gap-4">
-          <p className="text-xs text-[var(--text-muted)] italic leading-relaxed max-w-[200px]">
-            {t.albumView.footer}
-          </p>
-          <IconHeart className="h-5 w-5 text-[var(--text-muted)] flex-shrink-0" />
-        </div>
+        {/* Bottom breathing room */}
+        <div className="h-16" />
       </div>
 
       {/* ── Lightbox modal ── */}
@@ -949,7 +736,6 @@ export function AlbumView({
           }
         />
       )}
-
 
       {/* ── Publish Confirmation Modal ── */}
       {showPublishModal && (

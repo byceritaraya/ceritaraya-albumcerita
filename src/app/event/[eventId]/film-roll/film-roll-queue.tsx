@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useT } from '@/lib/i18n/use-t';
 import { FilmFrame, GlobalMessage } from './types';
-import { FilmRecipeSettings } from '@/lib/film/types';
-import { FilmImage } from '@/lib/film/FilmImage';
 import { PhotoLightbox } from '@/app/_components/photo-lightbox';
 
 // Shared Icons
@@ -75,59 +73,99 @@ export function IconFilmRoll({ className }: { className?: string }) {
   );
 }
 
-interface UnlimitedQueueProps {
-  unlimitedQueue: FilmFrame[];
+export interface FilmRollQueueProps {
+  frames: FilmFrame[];
+  isUnlimited: boolean;
+  isRollComplete: boolean;
+  remainingSlots: number;
+  percent: number;
   isUploading: boolean;
   globalMessage: GlobalMessage;
   onRemoveShot: (id: string) => void;
   onUploadBatch: () => void;
+  onDevelop: () => void;
   onCameraClick: () => void;
   onGalleryClick: () => void;
-  filmRecipe?: FilmRecipeSettings | null;
   theme?: string;
 }
 
-export function UnlimitedQueue({
-  unlimitedQueue,
+export function FilmRollQueue({
+  frames,
+  isUnlimited,
+  isRollComplete,
+  remainingSlots,
+  percent,
   isUploading,
   globalMessage,
   onRemoveShot,
   onUploadBatch,
+  onDevelop,
   onCameraClick,
   onGalleryClick,
-  filmRecipe,
   theme,
-}: UnlimitedQueueProps) {
+}: FilmRollQueueProps) {
   const { t } = useT();
-  const pendingCount = unlimitedQueue.filter((s) => s.status === 'queued' || s.status === 'error').length;
+  const pendingCount = frames.filter((s) => s.status === 'queued' || s.status === 'error').length;
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   
   const openModal = useCallback((i: number) => setSelectedIndex(i), []);
   const closeModal = useCallback(() => setSelectedIndex(null), []);
   const goPrev = useCallback(() => setSelectedIndex(i => (i !== null && i > 0 ? i - 1 : i)), []);
-  const goNext = useCallback(() => setSelectedIndex(i => (i !== null && i < unlimitedQueue.length - 1 ? i + 1 : i)), [unlimitedQueue.length]);
+  const goNext = useCallback(() => setSelectedIndex(i => (i !== null && i < frames.length - 1 ? i + 1 : i)), [frames.length]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       {globalMessage && (
         <div className="rounded-xl border px-4 py-3 text-sm border-[var(--theme-primary)]/20 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] ac-toast-enter">
           {globalMessage.text}
         </div>
       )}
 
-      {unlimitedQueue.length > 0 && (
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              {t.upload.capturedMomentsTitle}
-            </h3>
-            {pendingCount > 0 && (
-              <span className="text-xs text-[var(--text-secondary)]">{t.upload.readyToShare(pendingCount)}</span>
-            )}
+      {/* Progress Bar (Only for fixed rolls) */}
+      {!isUnlimited && (
+        <div className="flex flex-col items-center text-center">
+
+          {isRollComplete ? (
+            <p className="text-sm text-[var(--text-secondary)]">
+              {t.filmRoll.rollFullSubtitle}
+            </p>
+          ) : (
+            <p className={`text-sm ${remainingSlots === 1 ? 'text-[var(--text-primary)] font-semibold' : 'text-[var(--text-secondary)]'}`}>
+              {remainingSlots === 1 ? t.filmRoll.lastFrame : t.filmRoll.framesRemaining(remainingSlots)}
+            </p>
+          )}
+
+          <div className="mt-4 w-full max-w-[200px] h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[var(--theme-primary)] transition-all duration-500 ease-out"
+              style={{ width: `${percent}%` }}
+            />
           </div>
+        </div>
+      )}
+
+      {/* Captured Frames Queue */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+            {t.upload.capturedMomentsTitle}
+          </h3>
+          {(!isRollComplete || isUnlimited) && (
+            <button
+              type="button"
+              onClick={onGalleryClick}
+              disabled={isUploading}
+              className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--theme-primary)] transition-colors disabled:opacity-50"
+            >
+              {t.filmRoll.addFromGallery}
+            </button>
+          )}
+        </div>
+        
+        {frames.length > 0 ? (
           <div className="grid grid-cols-3 gap-2">
-            {unlimitedQueue.map((shot, index) => (
+            {frames.map((shot, index) => (
               <div 
                 key={shot.id} 
                 role="button"
@@ -136,18 +174,9 @@ export function UnlimitedQueue({
                 onClick={() => openModal(index)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openModal(index); }}
               >
-                {filmRecipe ? (
-                  <FilmImage
-                    photoId={shot.id}
-                    src={shot.previewUrl}
-                    recipeSettings={filmRecipe}
-                    alt="Captured moment"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={shot.previewUrl} alt="Captured moment" className="h-full w-full object-cover" />
-                )}
+                {/* Always show raw preview to preserve the disposable camera surprise */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={shot.previewUrl} alt="Captured moment" className="h-full w-full object-cover" />
                 
                 {shot.status === 'uploading' && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -171,7 +200,7 @@ export function UnlimitedQueue({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onRemoveShot(shot.id); }}
-                    className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white transition hover:opacity-80"
+                    className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white transition hover:opacity-80 backdrop-blur-md"
                     style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 70%, transparent)' }}
                     aria-label="Remove"
                   >
@@ -181,61 +210,60 @@ export function UnlimitedQueue({
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {pendingCount > 0 && (
-        <button
-          type="button"
-          onClick={onUploadBatch}
-          disabled={isUploading}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
-        >
-          {isUploading ? (
-            <><IconSpinner className="h-4 w-4 animate-spin" /> {t.upload.shareBtnActive}</>
-          ) : (
-            <><IconUpload className="h-4 w-4" /> {t.upload.shareBtn(pendingCount)}</>
-          )}
-        </button>
-      )}
-
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onCameraClick}
-          disabled={isUploading}
-          className="flex h-14 flex-[1.5] items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
-        >
-          <IconCamera className="h-4 w-4" />
-          {t.filmRoll.takePhoto}
-        </button>
-        <button
-          type="button"
-          onClick={onGalleryClick}
-          disabled={isUploading}
-          className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-primary)] px-6 text-sm font-semibold text-[var(--theme-primary)] transition-all hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
-        >
-          <IconGallery className="h-4 w-4 text-[var(--theme-primary)]" />
-          {t.filmRoll.fromGallery}
-        </button>
+        ) : (
+          <div className="py-8 text-center border-2 border-dashed border-[var(--bg-tertiary)] rounded-2xl">
+            <p className="text-sm text-[var(--text-muted)]">{t.filmRoll.noFrames}</p>
+          </div>
+        )}
       </div>
 
-      {selectedIndex !== null && unlimitedQueue[selectedIndex] && (
+      {/* Primary Action Button for Queue (Develop or Share) */}
+      {isUnlimited ? (
+        pendingCount > 0 && (
+          <button
+            type="button"
+            onClick={onUploadBatch}
+            disabled={isUploading}
+            className="flex h-14 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+          >
+            {isUploading ? (
+              <><IconSpinner className="h-4 w-4 animate-spin mr-2" /> {t.upload.shareBtnActive}</>
+            ) : (
+              t.upload.shareBtn(pendingCount)
+            )}
+          </button>
+        )
+      ) : (
+        pendingCount > 0 && (
+          <button
+            type="button"
+            onClick={onDevelop}
+            disabled={isUploading}
+            className="flex h-14 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+          >
+            {isUploading ? <IconSpinner className="h-4 w-4 animate-spin mr-2" /> : null}
+            {t.filmRoll.viewFilmRoll}
+          </button>
+        )
+      )}
+
+      {/* Lightbox for previewing RAW frames */}
+      {selectedIndex !== null && frames[selectedIndex] && (
         <PhotoLightbox
-          photoId={unlimitedQueue[selectedIndex].id}
-          photoUrl={unlimitedQueue[selectedIndex].previewUrl}
+          photoId={frames[selectedIndex].id}
+          photoUrl={frames[selectedIndex].previewUrl}
           onClose={closeModal}
           onPrev={goPrev}
           onNext={goNext}
           hasPrev={selectedIndex > 0}
-          hasNext={selectedIndex < unlimitedQueue.length - 1}
+          hasNext={selectedIndex < frames.length - 1}
           eventName="Captured Moments"
           photoNumber={selectedIndex + 1}
-          filmRecipe={filmRecipe}
+          filmRecipe={null} // Explicitly null to avoid applying recipe
           theme={theme}
           onDelete={
-            (unlimitedQueue[selectedIndex].status === 'queued' || unlimitedQueue[selectedIndex].status === 'error')
-            ? () => { onRemoveShot(unlimitedQueue[selectedIndex].id); closeModal(); }
+            (frames[selectedIndex].status === 'queued' || frames[selectedIndex].status === 'error')
+            ? () => { onRemoveShot(frames[selectedIndex].id); closeModal(); }
             : undefined
           }
         />

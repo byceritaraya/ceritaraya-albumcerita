@@ -186,6 +186,7 @@ export function useFilmRoll({
           source: 'camera'
         };
         setFrames(prev => [...prev, newFrame]);
+        setDevelopmentState('idle'); // Reset state so the queue shows up again
         showCaptureToast(remainingSlots - 1);
       }
     }
@@ -218,6 +219,7 @@ export function useFilmRoll({
       setUnlimitedQueue(prev => [...prev, ...newFrames]);
     } else {
       setFrames(prev => [...prev, ...newFrames]);
+      setDevelopmentState('idle'); // Reset state so the queue shows up again
       if (toAdd.length > 0) {
          showCaptureToast(remainingSlots - toAdd.length);
       }
@@ -234,6 +236,14 @@ export function useFilmRoll({
 
   const removeUnlimitedShot = useCallback((id: string) => {
     setUnlimitedQueue(prev => {
+      const shot = prev.find((s) => s.id === id);
+      if (shot) URL.revokeObjectURL(shot.previewUrl);
+      return prev.filter((s) => s.id !== id);
+    });
+  }, []);
+
+  const removeShot = useCallback((id: string) => {
+    setFrames(prev => {
       const shot = prev.find((s) => s.id === id);
       if (shot) URL.revokeObjectURL(shot.previewUrl);
       return prev.filter((s) => s.id !== id);
@@ -369,7 +379,7 @@ export function useFilmRoll({
     } else if (failCount > 0) {
       setGlobalMessage({ type: 'error', text: t.upload.allFailed });
     }
-  }, [unlimitedQueue, frames, eventId, onUploadComplete, t]);
+  }, [unlimitedQueue, frames, eventId, onUploadComplete, t, filmRecipe]);
 
   return {
     unlimited,
@@ -390,6 +400,7 @@ export function useFilmRoll({
     handleGalleryImport,
     triggerRetake,
     removeUnlimitedShot,
+    removeShot,
     handleUploadBatch,
   };
 }
