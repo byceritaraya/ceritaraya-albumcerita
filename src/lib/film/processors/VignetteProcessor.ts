@@ -6,7 +6,7 @@ export class VignetteProcessor implements Processor {
     canvas: HTMLCanvasElement, 
     ctx: CanvasRenderingContext2D, 
     settings: FilmRecipeSettings,
-    tempCanvas: HTMLCanvasElement // Unused in this processor, but required by interface
+    _tempCanvas: HTMLCanvasElement // Unused in this processor, but required by interface
   ): Promise<void> {
     const { vignette } = settings;
     if (vignette === 'none') return;

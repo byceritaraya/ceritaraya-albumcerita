@@ -4,7 +4,7 @@ import { useT } from '@/lib/i18n/use-t';
 import { useFilmRoll } from './film-roll/hooks/use-film-roll';
 import { FilmRollQueue } from './film-roll/film-roll-queue';
 import { FilmRollReview } from './film-roll/film-roll-review';
-import { FilmRecipeSettings } from '@/lib/film/types';
+import { FilmRecipe } from '@/lib/film/types';
 import { FilmRenderer } from '@/lib/film/FilmRenderer';
 import { FilmProcessing } from './film-roll/film-processing';
 import { IconCamera } from './film-roll/film-roll-queue';
@@ -15,15 +15,18 @@ export interface UploadFormProps {
   photosUsed: number;
   photosPerGuest: number;
   onUploadComplete: () => void;
-  filmRecipe?: FilmRecipeSettings | null;
-  filmRecipeName?: string;
+  /** Full recipe metadata (id, name, settings). Only `settings` is forwarded to rendering logic. */
+  filmRecipe?: FilmRecipe | null;
   coverImageUrl?: string;
   theme?: string;
 }
 
 export function UploadForm(props: UploadFormProps) {
   const { t } = useT();
-  const filmRoll = useFilmRoll(props);
+  const filmRoll = useFilmRoll({
+    ...props,
+    filmRecipe: props.filmRecipe?.settings ?? null,
+  });
   const [isLabOpen, setIsLabOpen] = useState(false);
 
   // Called when the guest taps "Develop My Film".
@@ -32,11 +35,11 @@ export function UploadForm(props: UploadFormProps) {
   // ready and written back into each frame's processedUrl field.
   const handleDevelop = useCallback(() => {
     filmRoll.setDevelopmentState('developing');
-    if (props.filmRecipe) {
+    if (props.filmRecipe?.settings) {
       filmRoll.frames.forEach(frame => {
         // Skip frames that are already processed from a previous develop action
         if (!frame.processedUrl) {
-          FilmRenderer.render(frame.id, frame.previewUrl, props.filmRecipe!)
+          FilmRenderer.render(frame.id, frame.previewUrl, props.filmRecipe!.settings)
             .catch(() => {
               // silently ignore — the upload phase will retry and surface the error
             });
@@ -119,7 +122,7 @@ export function UploadForm(props: UploadFormProps) {
                 onComplete={() => filmRoll.setDevelopmentState('processed')}
                 coverImageUrl={props.coverImageUrl}
                 theme={props.theme}
-                filmRecipeName={props.filmRecipeName}
+                filmRecipeName={props.filmRecipe?.name}
               />
             ) : filmRoll.developmentState === 'review' || filmRoll.developmentState === 'processed' ? (
               <FilmRollReview

@@ -6,7 +6,7 @@ export class BaseAdjustmentProcessor implements Processor {
     canvas: HTMLCanvasElement, 
     ctx: CanvasRenderingContext2D, 
     settings: FilmRecipeSettings,
-    tempCanvas: HTMLCanvasElement
+    _tempCanvas: HTMLCanvasElement
   ): Promise<void> {
     const { brightness, contrast, saturation, warmth } = settings;
 

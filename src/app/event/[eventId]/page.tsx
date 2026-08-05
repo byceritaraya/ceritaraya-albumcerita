@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
 import { type GalleryPhoto } from './gallery';
 import { EventPageClient } from './event-page-client';
-import { type FilmRecipeSettings } from '@/lib/film/types';
+import { type FilmRecipe } from '@/lib/film/types';
 
 interface PageProps {
   params: Promise<{ eventId: string }>;
@@ -31,10 +31,7 @@ export default async function EventPage({ params }: PageProps) {
       photos_per_guest,
       cover_image_url,
       theme,
-      film_recipes (
-        name,
-        settings
-      )
+      film_recipes (*)
     `)
     .eq('event_id', eventId)
     .single();
@@ -123,8 +120,6 @@ export default async function EventPage({ params }: PageProps) {
     }
   }
 
-  const filmRecipeData = event.film_recipes as unknown as { name: string, settings: FilmRecipeSettings } | null;
-
   return (
     <div className="min-h-screen bg-[var(--bg-secondary)] flex flex-col items-center py-12 px-4">
       <div className="w-full max-w-lg bg-[var(--bg-primary)] rounded-2xl shadow-sm border border-[var(--bg-tertiary)] overflow-hidden">
@@ -147,8 +142,7 @@ export default async function EventPage({ params }: PageProps) {
           galleryPhotos={galleryPhotos}
           totalPhotos={totalPhotos ?? 0}
           totalContributors={totalContributors ?? 0}
-          filmRecipe={filmRecipeData?.settings ?? null}
-          filmRecipeName={filmRecipeData?.name}
+          filmRecipe={(event.film_recipes as unknown as FilmRecipe | null) ?? null}
           coverImageUrl={event.cover_image_url ?? undefined}
           theme={event.theme ?? undefined}
         />

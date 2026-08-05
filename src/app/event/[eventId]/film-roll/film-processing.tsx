@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FilmRecipeSettings } from '@/lib/film/types';
+
+
 
 export interface FilmProcessingProps {
   onComplete: () => void;

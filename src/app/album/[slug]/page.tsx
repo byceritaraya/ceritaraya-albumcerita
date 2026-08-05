@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/service';
 import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
-import { type FilmRecipeSettings } from '@/lib/film/types';
+import { type FilmRecipe } from '@/lib/film/types';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -93,7 +93,7 @@ export default async function PublicAlbumPage({ params }: PageProps) {
       photos={photos}
       totalPhotos={totalPhotos ?? 0}
       totalContributors={totalContributors ?? 0}
-      filmRecipe={(event.film_recipes as unknown as { settings: FilmRecipeSettings } | null)?.settings ?? null}
+      filmRecipe={(event.film_recipes as unknown as FilmRecipe | null) ?? null}
       isPublished={event.is_published}
     />
   );

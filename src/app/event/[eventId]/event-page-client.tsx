@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { UploadForm } from './upload-form';
 import { Gallery, type GalleryPhoto } from './gallery';
 
-import { FilmRecipeSettings } from '@/lib/film/types';
+import { FilmRecipe } from '@/lib/film/types';
 
 interface EventPageClientProps {
   eventId: string;
@@ -14,8 +14,7 @@ interface EventPageClientProps {
   galleryPhotos: GalleryPhoto[];
   totalPhotos: number;
   totalContributors: number;
-  filmRecipe?: FilmRecipeSettings | null;
-  filmRecipeName?: string;
+  filmRecipe?: FilmRecipe | null;
   coverImageUrl?: string;
   theme?: string;
 }
@@ -28,7 +27,6 @@ export function EventPageClient({
   totalPhotos,
   totalContributors,
   filmRecipe,
-  filmRecipeName,
   coverImageUrl,
   theme,
 }: EventPageClientProps) {
@@ -49,7 +47,6 @@ export function EventPageClient({
           photosPerGuest={photosPerGuest}
           onUploadComplete={handleUploadComplete}
           filmRecipe={filmRecipe}
-          filmRecipeName={filmRecipeName}
           coverImageUrl={coverImageUrl}
           theme={theme}
         />

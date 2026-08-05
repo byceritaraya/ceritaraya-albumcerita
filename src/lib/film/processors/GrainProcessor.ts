@@ -8,7 +8,7 @@ export class GrainProcessor implements Processor {
     canvas: HTMLCanvasElement, 
     ctx: CanvasRenderingContext2D, 
     settings: FilmRecipeSettings,
-    tempCanvas: HTMLCanvasElement // Unused in this processor, but required by interface
+    _tempCanvas: HTMLCanvasElement // Unused in this processor, but required by interface
   ): Promise<void> {
     const { grain } = settings;
     if (grain === 'none') return;

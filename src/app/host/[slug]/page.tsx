@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { cookies, headers } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
 import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
-import { type FilmRecipeSettings } from '@/lib/film/types';
+import { type FilmRecipe } from '@/lib/film/types';
 import { HostAuth } from './host-auth';
 import { HostWelcome } from './host-welcome';
 
@@ -157,7 +157,7 @@ export default async function HostPage({ params }: PageProps) {
         isPublished={event.is_published}
         publicUrl={publicUrl}
         slug={slug}
-        filmRecipe={(event.film_recipes as unknown as { settings: FilmRecipeSettings } | null)?.settings ?? null}
+        filmRecipe={(event.film_recipes as unknown as FilmRecipe | null) ?? null}
       />
     </>
   );

@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
 import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
-import { type FilmRecipeSettings } from '@/lib/film/types';
+import { type FilmRecipe } from '@/lib/film/types';
 import { GuestAuth } from './guest-auth';
 import { GuestWelcome } from './guest-welcome';
 
@@ -159,8 +159,7 @@ export default async function GuestPage({ params }: PageProps) {
         photosUsed={photosUsed ?? 0}
         photosPerGuest={event.photos_per_guest}
         currentContributorToken={contributorId}
-        filmRecipe={(event.film_recipes as unknown as { settings: FilmRecipeSettings } | null)?.settings ?? null}
-        filmRecipeName={(event.film_recipes as unknown as { name: string } | null)?.name}
+        filmRecipe={(event.film_recipes as unknown as FilmRecipe | null) ?? null}
         slug={slug}
       />
     </>

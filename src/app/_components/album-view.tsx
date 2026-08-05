@@ -6,7 +6,7 @@ import { UploadForm } from '@/app/event/[eventId]/upload-form';
 import { PhotoLightbox } from './photo-lightbox';
 import { useT } from '@/lib/i18n/use-t';
 import { LangSwitcher } from '@/app/_components/lang-switcher';
-import { FilmRecipeSettings } from '@/lib/film/types';
+import { FilmRecipe, FilmRecipeSettings } from '@/lib/film/types';
 import { FilmImage } from '@/lib/film/FilmImage';
 import { FilmRenderer } from '@/lib/film/FilmRenderer';
 
@@ -40,8 +40,7 @@ export interface AlbumViewProps {
   slug?: string;
   isPublished?: boolean;
   publicUrl?: string;
-  filmRecipe?: FilmRecipeSettings | null;
-  filmRecipeName?: string;
+  filmRecipe?: FilmRecipe | null;
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -225,7 +224,6 @@ export function AlbumView({
   isPublished,
   publicUrl,
   filmRecipe,
-  filmRecipeName,
 }: AlbumViewProps) {
   const { t } = useT();
 
@@ -236,12 +234,12 @@ export function AlbumView({
     setPhotos(initialPhotos);
   }, [initialPhotos]);
 
-  // Stable memoized recipe — prevents new object references on re-render from
-  // causing redundant FilmRenderer.render() calls in child FilmImage components.
-  const stableFilmRecipe = useMemo(
-    () => filmRecipe ?? null,
+  // Extract settings from the full recipe for rendering logic.
+  // This keeps FilmRenderer and FilmImage decoupled from recipe metadata.
+  const stableFilmRecipe = useMemo<FilmRecipeSettings | null>(
+    () => filmRecipe?.settings ?? null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(filmRecipe)],
+    [JSON.stringify(filmRecipe?.settings)],
   );
 
   // Revoke all rendered Blob URLs when AlbumView unmounts.
@@ -551,8 +549,7 @@ export function AlbumView({
               photosUsed={localPhotosUsed}
               photosPerGuest={photosPerGuest}
               onUploadComplete={handleUploadComplete}
-              filmRecipe={stableFilmRecipe}
-              filmRecipeName={filmRecipeName}
+              filmRecipe={filmRecipe}
               coverImageUrl={coverImageUrl}
               theme={safeTheme.toLowerCase()}
             />
