@@ -28,21 +28,29 @@ export function UploadForm(props: UploadFormProps) {
     filmRecipe: props.filmRecipe?.settings ?? null,
   });
   const [isLabOpen, setIsLabOpen] = useState(false);
+  const [showDevelopWarning, setShowDevelopWarning] = useState(false);
 
   // Called when the guest taps "Develop My Film".
   // Kicks off rendering all frames concurrently in the background so that
   // by the time FilmProcessing animation completes the processed blobs are
   // ready and written back into each frame's processedUrl field.
-  const handleDevelop = useCallback(() => {
+  const triggerDevelop = useCallback(() => {
+    if (!filmRoll.isRollComplete) {
+      setShowDevelopWarning(true);
+      return;
+    }
+    confirmDevelop();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filmRoll.isRollComplete]);
+
+  const confirmDevelop = useCallback(() => {
+    setShowDevelopWarning(false);
     filmRoll.setDevelopmentState('developing');
     if (props.filmRecipe?.settings) {
       filmRoll.frames.forEach(frame => {
-        // Skip frames that are already processed from a previous develop action
         if (!frame.processedUrl) {
           FilmRenderer.render(frame.id, frame.previewUrl, props.filmRecipe!.settings)
-            .catch(() => {
-              // silently ignore — the upload phase will retry and surface the error
-            });
+            .catch(() => {});
         }
       });
     }
@@ -133,7 +141,7 @@ export function UploadForm(props: UploadFormProps) {
                 retakeJustCompleted={filmRoll.retakeJustCompleted}
                 onRetake={filmRoll.triggerRetake}
                 onUploadBatch={() => filmRoll.handleUploadBatch(false)}
-                onDevelop={handleDevelop}
+                onDevelop={triggerDevelop}
                 theme={props.theme}
               />
             ) : (
@@ -147,7 +155,7 @@ export function UploadForm(props: UploadFormProps) {
                 globalMessage={filmRoll.globalMessage}
                 onRemoveShot={filmRoll.unlimited ? filmRoll.removeUnlimitedShot : filmRoll.removeShot}
                 onUploadBatch={() => filmRoll.handleUploadBatch(true)}
-                onDevelop={handleDevelop}
+                onDevelop={triggerDevelop}
                 onCameraClick={() => filmRoll.cameraInputRef.current?.click()}
                 onGalleryClick={() => filmRoll.galleryInputRef.current?.click()}
                 theme={props.theme}
@@ -189,6 +197,32 @@ export function UploadForm(props: UploadFormProps) {
               <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5">
                 {filmRoll.captureToast.remaining === 0 ? t.filmRoll.rollFullSubtitle : t.filmRoll.framesRemaining(filmRoll.captureToast.remaining)}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Develop Warning Modal ── */}
+      {showDevelopWarning && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-[var(--bg-primary)] p-6 shadow-xl border border-[var(--bg-tertiary)] ac-modal-enter">
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">{t.filmRoll.developWarningTitle}</h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 leading-relaxed">
+              {t.filmRoll.developWarning}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDevelopWarning(false)}
+                className="flex-1 rounded-xl border border-[var(--bg-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+              >
+                {t.filmRoll.developWarningCancel}
+              </button>
+              <button
+                onClick={confirmDevelop}
+                className="flex-1 rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--theme-secondary)]"
+              >
+                {t.filmRoll.developWarningConfirm}
+              </button>
             </div>
           </div>
         </div>

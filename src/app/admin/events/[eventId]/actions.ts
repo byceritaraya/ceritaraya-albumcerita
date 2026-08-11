@@ -67,6 +67,7 @@ export async function updateEventAction(
     photos_per_guest: number;
     cover_image_url: string | null;
     film_recipe_id: string;
+    auto_publish_at: string | null;
   }
 ): Promise<{ error?: string }> {
   if (!data.name?.trim()) return { error: 'Event name is required.' };
@@ -84,6 +85,7 @@ export async function updateEventAction(
       photos_per_guest: data.photos_per_guest,
       cover_image_url: data.cover_image_url,
       film_recipe_id: data.film_recipe_id,
+      auto_publish_at: data.auto_publish_at ? new Date(data.auto_publish_at).toISOString() : null,
     })
     .eq('event_id', eventId);
 

@@ -20,6 +20,7 @@ interface EditEventFormProps {
     cover_image_url: string | null;
     raw_cover_image_url: string | null;
     film_recipe_id: string;
+    auto_publish_at: string;
   };
   availableRecipes: { id: string; name: string }[];
 }
@@ -199,6 +200,18 @@ export function EditEventForm({ eventId, initialValues, availableRecipes }: Edit
           >
             {availableRecipes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
+        </div>
+
+        {/* Auto Publish At */}
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t.adminEditEvent.autoPublishAt}</label>
+          <input
+            type="datetime-local"
+            value={values.auto_publish_at}
+            onChange={e => handleChange('auto_publish_at', e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 transition"
+          />
+          <p className="mt-1.5 text-xs text-gray-400">{t.adminEditEvent.autoPublishHelper}</p>
         </div>
 
         {/* Retention */}

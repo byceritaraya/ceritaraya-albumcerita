@@ -14,14 +14,15 @@ export default async function PublicAlbumPage({ params }: PageProps) {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, event_id, name, event_type, photos_per_guest, theme, cover_image_url, host_name, is_published, film_recipes (*)')
+    .select('id, event_id, name, event_type, photos_per_guest, theme, cover_image_url, host_name, is_published, auto_publish_at, film_recipes (*)')
     .eq('slug', slug)
     .single();
 
   if (eventError || !event) notFound();
 
   // ONLY show if it is published
-  if (!event.is_published) notFound();
+  const isActuallyPublished = event.is_published || (event.auto_publish_at && new Date() >= new Date(event.auto_publish_at));
+  if (!isActuallyPublished) notFound();
 
   // ── Data fetching (only non-hidden photos) ───────────────────────────
   const [
@@ -94,7 +95,7 @@ export default async function PublicAlbumPage({ params }: PageProps) {
       totalPhotos={totalPhotos ?? 0}
       totalContributors={totalContributors ?? 0}
       filmRecipe={(event.film_recipes as unknown as FilmRecipe | null) ?? null}
-      isPublished={event.is_published}
+      isPublished={isActuallyPublished}
     />
   );
 }

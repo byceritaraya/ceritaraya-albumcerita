@@ -20,7 +20,7 @@ export default async function GuestPage({ params }: PageProps) {
 
   const { data: event, error } = await supabase
     .from('events')
-    .select('id, event_id, name, event_type, photos_per_guest, theme, cover_image_url, host_name, expires_at, is_published, film_recipes (*)')
+    .select('id, event_id, name, event_type, photos_per_guest, theme, cover_image_url, host_name, expires_at, is_published, auto_publish_at, film_recipes (*)')
     .eq('slug', slug)
     .single();
 
@@ -49,7 +49,7 @@ export default async function GuestPage({ params }: PageProps) {
 
   const { data: contributor } = await supabase
     .from('contributors')
-    .select('display_name, event_id')
+    .select('display_name, event_id, roll_developed_at')
     .eq('id', contributorId)
     .single();
 
@@ -59,7 +59,8 @@ export default async function GuestPage({ params }: PageProps) {
   }
 
   // If published, event is closed for new contributions and becomes a view-only album
-  if (event.is_published) {
+  const isActuallyPublished = event.is_published || (event.auto_publish_at && new Date() >= new Date(event.auto_publish_at));
+  if (isActuallyPublished) {
     redirect(`/album/${slug}`);
   }
 
@@ -161,6 +162,8 @@ export default async function GuestPage({ params }: PageProps) {
         currentContributorToken={contributorId}
         filmRecipe={(event.film_recipes as unknown as FilmRecipe | null) ?? null}
         slug={slug}
+        autoPublishAt={event.auto_publish_at}
+        rollDevelopedAt={contributor.roll_developed_at}
       />
     </>
   );

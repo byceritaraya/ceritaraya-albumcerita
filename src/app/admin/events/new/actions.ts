@@ -96,6 +96,7 @@ export async function createEvent(
   const hostName = (formData.get('host_name') as string)?.trim() || null;
   const theme = (formData.get('theme') as string)?.trim() || 'Sage';
   const filmRecipeId = (formData.get('film_recipe_id') as string)?.trim();
+  const autoPublishAt = (formData.get('auto_publish_at') as string)?.trim() || null;
 
   // Validation
   if (!name) return { error: 'Event name is required.' };
@@ -149,6 +150,7 @@ export async function createEvent(
     host_name: hostName,
     theme,
     film_recipe_id: filmRecipeId,
+    auto_publish_at: autoPublishAt ? new Date(autoPublishAt).toISOString() : null,
   });
 
   if (error) return { error: error.message };

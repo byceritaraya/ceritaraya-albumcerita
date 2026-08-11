@@ -17,7 +17,7 @@ export default async function HostPage({ params }: PageProps) {
 
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, event_id, name, host_name, event_type, expires_at, cover_image_url, theme, is_published, guest_pin, film_recipes (*)')
+    .select('id, event_id, name, host_name, event_type, expires_at, cover_image_url, theme, is_published, auto_publish_at, guest_pin, film_recipes (*)')
     .eq('slug', slug)
     .single();
 
@@ -158,6 +158,7 @@ export default async function HostPage({ params }: PageProps) {
         publicUrl={publicUrl}
         slug={slug}
         filmRecipe={(event.film_recipes as unknown as FilmRecipe | null) ?? null}
+        autoPublishAt={event.auto_publish_at}
       />
     </>
   );

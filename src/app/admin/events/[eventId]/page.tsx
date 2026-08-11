@@ -68,7 +68,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
     .select(`
       event_id, name, state, event_type, retention_months, max_contributors, 
       photos_per_guest, slug, host_name, theme, created_at, expires_at, 
-      is_published, cover_image_url, film_recipe_id
+      is_published, cover_image_url, film_recipe_id, auto_publish_at
     `)
     .eq('event_id', eventId)
     .single();
@@ -206,6 +206,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
                 cover_image_url: finalCoverUrl,
                 raw_cover_image_url: e.cover_image_url,
                 film_recipe_id: e.film_recipe_id ?? '',
+                auto_publish_at: e.auto_publish_at ? new Date(e.auto_publish_at).toISOString().slice(0, 16) : '',
               }}
             />
           </div>

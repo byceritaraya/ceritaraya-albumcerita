@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadForm } from '@/app/event/[eventId]/upload-form';
 import { PhotoLightbox } from './photo-lightbox';
@@ -9,6 +9,52 @@ import { LangSwitcher } from '@/app/_components/lang-switcher';
 import { FilmRecipe, FilmRecipeSettings } from '@/lib/film/types';
 import { FilmImage } from '@/lib/film/FilmImage';
 import { FilmRenderer } from '@/lib/film/FilmRenderer';
+
+function AutoPublishCountdown({ autoPublishAt, t }: { autoPublishAt: string; t: ReturnType<typeof useT>['t'] }) {
+  const [timeLeft, setTimeLeft] = useState('');
+  const hasReloaded = useRef(false);
+
+  useEffect(() => {
+    const target = new Date(autoPublishAt).getTime();
+    
+    const update = () => {
+      const now = new Date().getTime();
+      const diff = target - now;
+      if (diff <= 0) {
+        setTimeLeft('00:00:00');
+        if (!hasReloaded.current) {
+          hasReloaded.current = true;
+          setTimeout(() => window.location.reload(), 1000);
+        }
+        return;
+      }
+      
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      setTimeLeft(
+        `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+      );
+    };
+    
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPublishAt]);
+
+  return (
+    <div className="flex flex-col items-center gap-1 mb-6">
+      <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)] font-medium">
+        {t.albumView.autoPublishCountdown}
+      </span>
+      <span className="text-3xl font-light tabular-nums tracking-tight text-[var(--text-primary)] leading-none">
+        {timeLeft || '00:00:00'}
+      </span>
+    </div>
+  );
+}
 
 export interface AlbumPhoto {
   id: string;
@@ -41,6 +87,8 @@ export interface AlbumViewProps {
   isPublished?: boolean;
   publicUrl?: string;
   filmRecipe?: FilmRecipe | null;
+  autoPublishAt?: string | null;
+  rollDevelopedAt?: string | null;
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -106,6 +154,7 @@ interface PhotoCardProps {
   onToggleSelection: (id: string) => void;
   onToggleVisibility: (photo: AlbumPhoto) => void;
   onDeleteRequest: (photo: AlbumPhoto) => void;
+  rollDevelopedAt?: string | null;
 }
 
 function PhotoCard({
@@ -122,6 +171,7 @@ function PhotoCard({
   onToggleSelection,
   onToggleVisibility,
   onDeleteRequest,
+  rollDevelopedAt,
 }: PhotoCardProps) {
   const { t } = useT();
   const isSelected = selectedPhotoIds.has(photo.id);
@@ -189,7 +239,7 @@ function PhotoCard({
       )}
 
       {/* Guest-only: Delete own photo */}
-      {role === 'guest' && !isPublished && photo.guest_token === currentContributorToken && (
+      {role === 'guest' && !isPublished && !rollDevelopedAt && photo.guest_token === currentContributorToken && (
         <button
           onClick={() => onDeleteRequest(photo)}
           className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
@@ -224,6 +274,8 @@ export function AlbumView({
   isPublished,
   publicUrl,
   filmRecipe,
+  autoPublishAt,
+  rollDevelopedAt,
 }: AlbumViewProps) {
   const { t } = useT();
 
@@ -482,6 +534,7 @@ export function AlbumView({
     onToggleSelection: toggleSelection,
     onToggleVisibility: handleToggle,
     onDeleteRequest: setPhotoToDelete,
+    rollDevelopedAt,
   };
 
   return (
@@ -533,6 +586,11 @@ export function AlbumView({
       {/* ── Content ── */}
       <div className="relative z-10 px-5 pb-12 flex-1 pt-28">
 
+        {/* ── Auto Publish Countdown ── */}
+        {!isPublished && autoPublishAt && ((role === 'guest' && rollDevelopedAt) || role === 'host') && (
+          <AutoPublishCountdown autoPublishAt={autoPublishAt} t={t} />
+        )}
+
         {/* ── Action buttons / Upload Panel ── */}
         <div>
           {isPublished ? (
@@ -543,7 +601,7 @@ export function AlbumView({
             >
               {isDownloading ? t.albumView.preparingDownload : t.albumView.downloadAlbum}
             </button>
-          ) : role === 'guest' ? (
+          ) : role === 'guest' && !rollDevelopedAt ? (
             <UploadForm
               eventId={eventId}
               photosUsed={localPhotosUsed}
@@ -554,31 +612,21 @@ export function AlbumView({
               theme={safeTheme.toLowerCase()}
             />
           ) : role === 'host' ? (
-            <div className="grid grid-cols-2 gap-3">
-              {/* Host: Share Guest Link */}
-              {guestUrl ? (
-                <button
-                  onClick={shareGuestLink}
-                  className="flex h-14 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
-                >
-                  {t.albumView.shareGuestLink}
-                </button>
-              ) : (
-                <div />
-              )}
-              {!isPublished ? (
-                <button
-                  onClick={() => setShowPublishModal(true)}
-                  className="flex h-14 w-full items-center justify-center rounded-full border border-[var(--bg-tertiary)] bg-[var(--bg-primary)] px-6 text-sm font-semibold text-[var(--theme-primary)] transition hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
-                >
-                  {t.albumView.publishAlbum}
-                </button>
-              ) : (
-                <div />
-              )}
-            </div>
+            !isPublished ? (
+              <button
+                onClick={() => setShowPublishModal(true)}
+                className="flex h-14 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--theme-secondary)] disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]"
+              >
+                {t.albumView.publishNow}
+              </button>
+            ) : null
           ) : null}
         </div>
+
+        {/* ── Roll Developed Notice (Guest Only) ── */}
+        {role === 'guest' && rollDevelopedAt && !isPublished && (
+          <p className="mt-4 text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)] font-medium text-center">{t.filmRoll.rollShared}</p>
+        )}
 
         {/* ── Publish Notice (Host Only, inline) ── */}
         {role === 'host' && isPublished && publicUrl && (
@@ -727,7 +775,7 @@ export function AlbumView({
           isPublished={isPublished}
           theme={safeTheme.toLowerCase()}
           onDelete={
-            (role === 'guest' && !isPublished && visiblePhotos[selectedIndex].guest_token === currentContributorToken)
+            (role === 'guest' && !isPublished && !rollDevelopedAt && visiblePhotos[selectedIndex].guest_token === currentContributorToken)
             ? () => setPhotoToDelete(visiblePhotos[selectedIndex])
             : undefined
           }

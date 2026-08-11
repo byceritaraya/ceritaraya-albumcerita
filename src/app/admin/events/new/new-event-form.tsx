@@ -207,6 +207,19 @@ export function NewEventForm({ availableRecipes }: { availableRecipes: { id: str
             </select>
           </Field>
 
+          {/* Auto Publish At */}
+          <Field label={t.adminEditEvent.autoPublishAt} htmlFor="auto_publish_at">
+            <input
+              id="auto_publish_at"
+              name="auto_publish_at"
+              type="datetime-local"
+              className={inputClass}
+            />
+            <p className="text-xs text-gray-400">
+              {t.adminEditEvent.autoPublishHelper}
+            </p>
+          </Field>
+
           {/* Retention Months */}
           <Field label={t.adminNewEvent.retention} htmlFor="retention_months">
             <select
