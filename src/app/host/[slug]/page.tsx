@@ -154,7 +154,7 @@ export default async function HostPage({ params }: PageProps) {
         totalPhotos={totalPhotos ?? 0}
         totalContributors={totalContributors}
         guestUrl={guestUrl}
-        isPublished={event.is_published}
+        isPublished={event.is_published || (event.auto_publish_at && new Date() >= new Date(event.auto_publish_at))}
         publicUrl={publicUrl}
         slug={slug}
         filmRecipe={(event.film_recipes as unknown as FilmRecipe | null) ?? null}
