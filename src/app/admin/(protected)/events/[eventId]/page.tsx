@@ -8,6 +8,7 @@ import { AccessCard } from './access-cards';
 import { EditEventForm } from './edit-event-form';
 import { getT } from '@/lib/i18n/server';
 import { LangSwitcher } from '@/app/_components/lang-switcher';
+import { Settings } from 'lucide-react';
 
 type EventState = 'draft' | 'published' | 'expired' | 'archived';
 
@@ -66,9 +67,9 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
   const { data: e, error } = await supabase
     .from('events')
     .select(`
-      event_id, name, state, event_type, retention_months, max_contributors, 
-      photos_per_guest, slug, host_name, theme, created_at, expires_at, 
-      is_published, cover_image_url, film_recipe_id, auto_publish_at
+      id, event_id, name, state, event_type, retention_months, max_contributors,
+      photos_per_guest, slug, host_name, theme, created_at, expires_at,
+      is_published, cover_image_url, film_recipe_id, auto_publish_at, client_id
     `)
     .eq('event_id', eventId)
     .single();
@@ -92,6 +93,24 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
       </div>
     );
   }
+
+  // Fetch client and event_services in parallel (after we know the event exists)
+  const [clientResult, eventServicesResult] = await Promise.all([
+    e.client_id
+      ? supabase
+          .from('clients')
+          .select('id, client_code, name')
+          .eq('id', e.client_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from('event_services')
+      .select('id, status, service_id, services(name, slug)')
+      .eq('event_id', e.id),
+  ]);
+
+  const clientData = clientResult.data;
+  const eventServices = eventServicesResult.data ?? [];
 
   let finalCoverUrl = e.cover_image_url ?? null;
   if (finalCoverUrl && !finalCoverUrl.startsWith('http')) {
@@ -215,7 +234,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Read-only details */}
+        {/* Read-only system details */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">{t.adminEventDetail.sysInfo}</h2>
@@ -233,6 +252,70 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
             <FieldRow label={t.adminEventDetail.created} value={formatDate(e.created_at)} />
           </dl>
         </div>
+
+        {/* Client panel */}
+        {clientData && clientData.client_code !== 'CLI-0000' && (
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Client</h2>
+            </div>
+            <div className="px-6 py-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">{clientData.name}</p>
+                <p className="text-xs font-mono text-gray-400 mt-0.5">{clientData.client_code}</p>
+              </div>
+              <Link
+                href={`/admin/clients/${clientData.id}`}
+                className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                View Client →
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Services panel */}
+        {eventServices.length > 0 && (
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Services</h2>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {eventServices.map((es) => {
+                const svc = Array.isArray(es.services) ? es.services[0] : es.services;
+                const serviceName = svc?.name ?? 'Unknown Service';
+                return (
+                  <div key={es.id} className="px-6 py-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{serviceName}</p>
+                        <span
+                          className={`inline-flex mt-1 items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${
+                            es.status === 'active'
+                              ? 'bg-green-100 text-green-700'
+                              : es.status === 'pending_setup'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-gray-100 text-gray-500'
+                          }`}
+                        >
+                          {es.status === 'pending_setup' ? 'Pending Setup' : es.status}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      disabled
+                      title="Configuration coming in a future phase"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-400 cursor-not-allowed"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                      Configure
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

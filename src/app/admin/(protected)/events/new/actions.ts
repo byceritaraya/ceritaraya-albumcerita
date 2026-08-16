@@ -9,73 +9,12 @@ import {
   PIN_FLASH_COOKIE,
   PIN_FLASH_MAX_AGE,
 } from '@/lib/pin-flash';
-
-// ── Generators ──────────────────────────────────────────────────────────────
-
-/** 8-char uppercase alphanumeric ID, omitting visually ambiguous chars. */
-function generateEventId(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from(
-    { length: 8 },
-    () => chars[Math.floor(Math.random() * chars.length)]
-  ).join('');
-}
-
-/**
- * URL-safe slug: slugify(event_name) + "-" + ddMMyy(event_date)
- *
- * Examples:
- *   "Budi & Ari Wedding", "2026-02-25" → "budi-ari-wedding-250226"
- *   "Aaron's Birthday",   "2026-07-01" → "aarons-birthday-010726"
- */
-function generateSlug(name: string, eventDate: string): string {
-  const [year, month, day] = eventDate.split('-');
-  const suffix = `${day}${month}${year.slice(2)}`;
-
-  const base = name
-    .toLowerCase()
-    .replace(/[''`]/g, '')            // strip apostrophes
-    .replace(/&/g, 'and')            // & → and
-    .replace(/[^a-z0-9\s]/g, ' ')   // other special chars → space
-    .trim()
-    .replace(/\s+/g, '-')            // spaces → hyphens
-    .replace(/-+/g, '-')             // collapse multiple hyphens
-    .replace(/^-|-$/g, '')           // trim leading/trailing hyphens
-    .slice(0, 40)
-    .replace(/-+$/, '');             // trim trailing hyphens after slice
-
-  return `${base}-${suffix}`;
-}
-
-/**
- * Resolve slug collisions by appending -2, -3, etc.
- * Stops after 99 attempts (effectively impossible in practice).
- */
-async function resolveSlug(
-  baseSlug: string,
-  supabase: ReturnType<typeof createServiceClient>
-): Promise<string> {
-  let candidate = baseSlug;
-  let counter = 2;
-  while (counter <= 99) {
-    const { data } = await supabase
-      .from('events')
-      .select('id')
-      .eq('slug', candidate)
-      .maybeSingle();
-    if (!data) return candidate;
-    candidate = `${baseSlug}-${counter}`;
-    counter++;
-  }
-  return candidate;
-}
-
-/** ISO timestamp for when the event expires, based on retention. */
-function getExpiresAt(retentionMonths: number): string {
-  const date = new Date();
-  date.setMonth(date.getMonth() + retentionMonths);
-  return date.toISOString();
-}
+import {
+  generateEventId,
+  generateSlug,
+  resolveSlug,
+  getExpiresAt,
+} from '@/lib/event-generators';
 
 // ── Action ───────────────────────────────────────────────────────────────────
 

@@ -31,7 +31,7 @@ export default async function ClientDetailPage({
       event_id,
       name,
       state,
-      auto_publish_at,
+      event_date,
       created_at,
       event_services(count)
     `)
@@ -81,11 +81,18 @@ export default async function ClientDetailPage({
                           <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              {new Date(event.created_at).toLocaleDateString('en-GB', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                              })}
+                              {event.event_date
+                                ? new Date(event.event_date).toLocaleDateString('en-GB', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    timeZone: 'UTC',
+                                  })
+                                : new Date(event.created_at).toLocaleDateString('en-GB', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
                             </span>
                             <span>&bull;</span>
                             <span>{event.event_services?.[0]?.count || 0} Services</span>
@@ -121,13 +128,13 @@ export default async function ClientDetailPage({
               )}
 
               <div className="mt-6 pt-6 border-t border-gray-100">
-                <button
-                  disabled
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-400 border border-gray-200 cursor-not-allowed"
+                <Link
+                  href={`/admin/clients/${clientId}/events/new`}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  Create Event (Coming Soon)
-                </button>
+                  Create Event
+                </Link>
               </div>
             </div>
           </div>
