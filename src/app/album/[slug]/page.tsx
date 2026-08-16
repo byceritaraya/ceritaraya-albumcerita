@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/service';
 import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
 import { type FilmRecipe } from '@/lib/film/types';
+import { getMediaUrl, getMediaUrls } from '@/lib/media';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -53,35 +54,23 @@ export default async function PublicAlbumPage({ params }: PageProps) {
 
   const totalContributors = new Set(rawContributorTokens?.map(r => r.guest_token) ?? []).size;
 
-  // ── Signed URLs ────────────────────────────────────────────────────────────
+  // ── Resolve media URLs from Cloudeka ──────────────────────────────────────
   const photos: AlbumPhoto[] = [];
   if (rawPhotos && rawPhotos.length > 0) {
-    const { data: signedData } = await supabase.storage
-      .from('albumcerita_photos')
-      .createSignedUrls(rawPhotos.map(p => p.storage_path), 3600);
-
+    const urlMap = await getMediaUrls(rawPhotos.map(p => p.storage_path));
     for (const p of rawPhotos) {
-      const signed = signedData?.find(s => s.path === p.storage_path);
       photos.push({
         ...p,
-        original_url: signed?.signedUrl ?? p.original_url,
+        original_url: urlMap.get(p.storage_path) ?? p.original_url,
         is_hidden: p.is_hidden ?? false,
       });
     }
   }
 
-  let finalCoverUrl: string | undefined = undefined;
-  const rawCover = event.cover_image_url;
-  if (rawCover) {
-    if (rawCover.startsWith('http')) {
-      finalCoverUrl = rawCover;
-    } else {
-      const { data: signedData } = await supabase.storage
-        .from('albumcerita_photos')
-        .createSignedUrl(rawCover, 3600);
-      if (signedData?.signedUrl) finalCoverUrl = signedData.signedUrl;
-    }
-  }
+  // ── Resolve cover image from Cloudeka ─────────────────────────────────────
+  const finalCoverUrl = event.cover_image_url
+    ? await getMediaUrl(event.cover_image_url)
+    : undefined;
 
   return (
     <AlbumView

@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { type GalleryPhoto } from './gallery';
 import { EventPageClient } from './event-page-client';
 import { type FilmRecipe } from '@/lib/film/types';
+import { getMediaUrls } from '@/lib/media';
 
 interface PageProps {
   params: Promise<{ eventId: string }>;
@@ -101,21 +102,14 @@ export default async function EventPage({ params }: PageProps) {
       .eq('is_hidden', false),
   ]);
 
-  // ── Generate signed URLs for gallery photos ───────────────────────────────
-  const bucketName = 'albumcerita_photos';
+  // ── Resolve media URLs from Cloudeka ──────────────────────────────────────
   const galleryPhotos: GalleryPhoto[] = [];
-
   if (photos && photos.length > 0) {
-    const storagePaths = photos.map((p) => p.storage_path);
-    const { data: signedData } = await supabase.storage
-      .from(bucketName)
-      .createSignedUrls(storagePaths, 3600); // 1 hour expiry
-
+    const urlMap = await getMediaUrls(photos.map((p) => p.storage_path));
     for (const photo of photos) {
-      const signed = signedData?.find((s) => s.path === photo.storage_path);
       galleryPhotos.push({
         ...photo,
-        original_url: signed?.signedUrl ?? photo.original_url,
+        original_url: urlMap.get(photo.storage_path) ?? photo.original_url,
       });
     }
   }

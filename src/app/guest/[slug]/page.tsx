@@ -5,6 +5,7 @@ import { AlbumView, type AlbumPhoto } from '@/app/_components/album-view';
 import { type FilmRecipe } from '@/lib/film/types';
 import { GuestAuth } from './guest-auth';
 import { GuestWelcome } from './guest-welcome';
+import { getMediaUrl, getMediaUrls } from '@/lib/media';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -26,21 +27,10 @@ export default async function GuestPage({ params }: PageProps) {
 
   if (error || !event) notFound();
 
-  let finalCoverUrl: string | undefined = undefined;
-  const rawCover = event.cover_image_url;
-  if (rawCover) {
-    if (rawCover.startsWith('http')) {
-      // Already a full URL (legacy or public bucket)
-      finalCoverUrl = rawCover;
-    } else {
-      // Storage path → generate signed URL
-      const { data: signedData } = await supabase.storage
-        .from('albumcerita_photos')
-        .createSignedUrl(rawCover, 3600);
-      if (signedData?.signedUrl) finalCoverUrl = signedData.signedUrl;
-      // If signing fails, finalCoverUrl stays undefined → fallback gradient shown
-    }
-  }
+  // ── Resolve cover image from Cloudeka ─────────────────────────────────────
+  const finalCoverUrl = event.cover_image_url
+    ? await getMediaUrl(event.cover_image_url)
+    : undefined;
 
   // No contributor session → show PIN / Name auth
   if (!contributorId) {
@@ -111,7 +101,7 @@ export default async function GuestPage({ params }: PageProps) {
 
   const totalContributors = new Set(rawContributorTokens?.map(r => r.guest_token) ?? []).size;
 
-  // ── Signed URLs ────────────────────────────────────────────────────────────
+  // ── Resolve media URLs from Cloudeka ──────────────────────────────────────
   const photos: AlbumPhoto[] = [];
 
   // Merge own + others, dedup by id (own photos take precedence)
@@ -122,16 +112,14 @@ export default async function GuestPage({ params }: PageProps) {
   }, []);
 
   if (allRaw && allRaw.length > 0) {
-    const { data: signedData } = await supabase.storage
-      .from('albumcerita_photos')
-      .createSignedUrls(allRaw.map(p => p.storage_path), 3600);
-
+    const urlMap = await getMediaUrls(allRaw.map(p => p.storage_path));
     for (const p of allRaw) {
-      const signed = signedData?.find(s => s.path === p.storage_path);
-      photos.push({ ...p, original_url: signed?.signedUrl ?? p.original_url });
+      photos.push({
+        ...p,
+        original_url: urlMap.get(p.storage_path) ?? p.original_url,
+      });
     }
   }
-
 
   const showWelcome = cookieStore.has(`show_welcome_${contributorId}`);
 

@@ -9,6 +9,7 @@ import { EditEventForm } from './edit-event-form';
 import { getT } from '@/lib/i18n/server';
 import { LangSwitcher } from '@/app/_components/lang-switcher';
 import { Settings } from 'lucide-react';
+import { getMediaUrl } from '@/lib/media';
 
 type EventState = 'draft' | 'published' | 'expired' | 'archived';
 
@@ -113,9 +114,8 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
   const eventServices = eventServicesResult.data ?? [];
 
   let finalCoverUrl = e.cover_image_url ?? null;
-  if (finalCoverUrl && !finalCoverUrl.startsWith('http')) {
-    const { data } = await supabase.storage.from('albumcerita_photos').createSignedUrl(finalCoverUrl, 3600);
-    if (data) finalCoverUrl = data.signedUrl;
+  if (finalCoverUrl) {
+    finalCoverUrl = await getMediaUrl(finalCoverUrl);
   }
 
   const isActuallyPublished = Boolean(e.is_published || (e.auto_publish_at && new Date() >= new Date(e.auto_publish_at)));

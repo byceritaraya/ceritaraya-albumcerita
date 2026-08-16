@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { PIN_FLASH_COOKIE, encodePinFlash, PIN_FLASH_MAX_AGE } from '@/lib/pin-flash';
 import { generatePin, hashPin } from '@/lib/pin';
 import { createServiceClient } from '@/lib/supabase/service';
+import { uploadMedia } from '@/lib/media';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -95,21 +96,34 @@ export async function updateEventAction(
   return {};
 }
 
+/**
+ * Uploads an event cover image directly to Cloudeka S3.
+ * Returns the object key (relative path) on success, which is stored in
+ * events.cover_image_url as the authoritative media reference.
+ */
 export async function uploadCoverImageAction(eventId: string, formData: FormData): Promise<{ error?: string; url?: string }> {
   const file = formData.get('cover_image') as File | null;
   if (!file) return { error: 'No file provided' };
 
-  const supabase = createServiceClient();
+  // Derive the object key using the same convention as before:
+  // covers/{eventId}-{timestamp}.{ext}
+  // This is backward-compatible with existing cover_image_url values in the DB.
   const ext = file.name.split('.').pop();
-  const path = `covers/${eventId}-${Date.now()}.${ext}`;
+  const objectKey = `covers/${eventId}-${Date.now()}.${ext}`;
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const { error } = await supabase.storage.from('albumcerita_photos').upload(path, buffer, {
+  const result = await uploadMedia({
+    objectKey,
+    body: buffer,
     contentType: file.type,
-    upsert: false,
   });
-  if (error) return { error: error.message };
 
-  return { url: path };
+  if ('error' in result) {
+    console.error('[uploadCoverImageAction] Cloudeka upload failed:', result.error);
+    return { error: result.error };
+  }
+
+  // Return the object key — the caller saves this to events.cover_image_url
+  return { url: objectKey };
 }

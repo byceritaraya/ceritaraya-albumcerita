@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
+import { uploadMedia } from '@/lib/media';
 import crypto from 'crypto';
 
 export type UploadPhotoState = {
@@ -130,46 +131,45 @@ export async function uploadPhoto(
     };
   }
 
-  // Upload to Supabase Storage
+  // ── Upload directly to Cloudeka ─────────────────────────────────────────────
   const fileExt = file.name.split('.').pop() || 'jpg';
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
-  const storagePath = `${event.id}/${fileName}`;
-  const bucketName = 'albumcerita_photos';
+  // Object key format: {eventUUID}/{fileName}
+  // This preserves backward compatibility with existing storage_path values.
+  const objectKey = `${event.id}/${fileName}`;
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  const { error: uploadError } = await supabase.storage
-    .from(bucketName)
-    .upload(storagePath, buffer, {
-      contentType: file.type,
-      upsert: false,
-    });
+  const uploadResult = await uploadMedia({
+    objectKey,
+    body: buffer,
+    contentType: file.type,
+  });
 
-  if (uploadError) {
-    console.error('Storage upload error:', uploadError);
+  if ('error' in uploadResult) {
+    console.error('[uploadPhoto] Cloudeka upload failed:', uploadResult.error);
     return { error: 'Failed to upload photo to storage.' };
   }
 
-  const { data: publicUrlData } = supabase.storage
-    .from(bucketName)
-    .getPublicUrl(storagePath);
-
+  // ── Save metadata to Supabase ───────────────────────────────────────────────
+  // storage_path = authoritative object key (used for all URL generation)
+  // original_url = object key (stored for reference; getMediaUrl resolves it)
   const { error: insertError } = await supabase
     .from('photos')
     .insert({
       event_id: event.id,
       guest_token: contributor.id,
       guest_name: contributor.display_name,
-      storage_path: storagePath,
-      original_url: publicUrlData.publicUrl,
+      storage_path: objectKey,
+      original_url: objectKey,
       file_size_bytes: file.size,
       width: null,
       height: null,
     });
 
   if (insertError) {
-    console.error('Photo insert error:', insertError);
+    console.error('[uploadPhoto] Photo insert error:', insertError);
     return { error: 'Failed to record photo in database.' };
   }
 

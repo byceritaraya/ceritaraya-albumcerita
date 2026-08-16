@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/service';
+import { getMediaUrls } from '@/lib/media';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const archiver = require('archiver');
 import { PassThrough } from 'stream';
@@ -68,21 +69,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     return new NextResponse('No photos found', { status: 404 });
   }
 
-  // 5. Generate Signed URLs for the photos
-  const { data: signedData, error: signError } = await supabase.storage
-    .from('albumcerita_photos')
-    .createSignedUrls(photos.map(p => p.storage_path), 3600);
-
-  if (signError || !signedData) {
-    return new NextResponse('Failed to generate URLs', { status: 500 });
-  }
-
-  const urlMap = new Map<string, string>();
-  signedData.forEach(s => {
-    if (s.signedUrl && s.path) {
-      urlMap.set(s.path, s.signedUrl as string);
-    }
-  });
+  // 5. Resolve Cloudeka media URLs for all photos
+  const urlMap = await getMediaUrls(photos.map(p => p.storage_path));
 
   // 6. Setup Archiver & Stream
   const archive = archiver('zip', {
@@ -109,11 +97,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
   (async () => {
     let index = 1;
     for (const photo of photos) {
-      const signedUrl = urlMap.get(photo.storage_path);
-      if (!signedUrl) continue;
+      const mediaUrl = urlMap.get(photo.storage_path);
+      if (!mediaUrl) continue;
 
       try {
-        const res = await fetch(signedUrl);
+        const res = await fetch(mediaUrl);
         if (res.ok) {
           const safeContributor = sanitize(photo.guest_name);
           const safeNumber = index.toString().padStart(3, '0');
