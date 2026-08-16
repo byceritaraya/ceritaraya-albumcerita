@@ -168,14 +168,23 @@ CREATE POLICY "Admins can view their own profile" ON admin_users
   FOR SELECT TO authenticated 
   USING (id = auth.uid());
 
+-- Secure helper to check superadmin status without triggering RLS recursion
+CREATE OR REPLACE FUNCTION is_superadmin(user_id uuid)
+RETURNS BOOLEAN
+LANGUAGE sql 
+SECURITY DEFINER 
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM admin_users WHERE id = user_id AND role = 'superadmin'
+  );
+$$;
+
 CREATE POLICY "Superadmins have full access" ON admin_users
   FOR ALL TO authenticated 
-  USING (
-    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid() AND role = 'superadmin')
-  )
-  WITH CHECK (
-    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid() AND role = 'superadmin')
-  );
+  USING (is_superadmin(auth.uid()))
+  WITH CHECK (is_superadmin(auth.uid()));
 
 -- ------------------------------------------
 -- CLIENT_SESSIONS & PIN_ATTEMPTS:

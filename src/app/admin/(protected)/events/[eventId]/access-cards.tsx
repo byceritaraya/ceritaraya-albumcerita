@@ -60,7 +60,7 @@ export function AccessCard({ eventId, title, slug, pin, baseUrl, type }: AccessC
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 p-6 border border-gray-200 rounded-xl bg-white shadow-sm">
+    <div className="flex flex-col md:flex-row gap-6 p-6 border border-gray-200 rounded-xl bg-white shadow-sm" data-hmr="force">
       <div className="flex flex-col gap-4 flex-1">
         <h3 className="text-lg font-bold text-gray-900 tracking-tight">{title}</h3>
         

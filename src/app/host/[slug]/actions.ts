@@ -153,6 +153,7 @@ export async function publishAlbum(slug: string): Promise<{ error?: string }> {
       .from('events')
       .update({
         is_published: true,
+        state: 'published',
         published_at: new Date().toISOString(),
       })
       .eq('id', eventId);
@@ -177,7 +178,11 @@ export async function unpublishAlbum(slug: string): Promise<{ error?: string }> 
 
     const { error } = await supabase
       .from('events')
-      .update({ is_published: false })
+      .update({ 
+        is_published: false,
+        state: 'draft',
+        auto_publish_at: null 
+      })
       .eq('id', eventId);
 
     if (error) return { error: error.message };

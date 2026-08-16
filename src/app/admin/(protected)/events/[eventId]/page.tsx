@@ -99,6 +99,9 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
     if (data) finalCoverUrl = data.signedUrl;
   }
 
+  const isActuallyPublished = Boolean(e.is_published || (e.auto_publish_at && new Date() >= new Date(e.auto_publish_at)));
+  const computedState = isActuallyPublished && e.state === 'draft' ? 'published' : (e.state as string);
+
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10 relative">
       <div className="absolute top-6 right-6">
@@ -127,9 +130,9 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
         </div>
         <div className="ml-auto flex items-center gap-3">
           <span
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium capitalize ${STATE_STYLES[e.state as keyof typeof STATE_STYLES] ?? 'bg-gray-100 text-gray-600'}`}
+            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium capitalize ${STATE_STYLES[computedState as keyof typeof STATE_STYLES] ?? 'bg-gray-100 text-gray-600'}`}
           >
-            {e.state as string}
+            {computedState}
           </span>
         </div>
       </div>
@@ -163,10 +166,10 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
             {t.adminEventDetail.albumStatus}
           </h2>
           <div className="flex items-center gap-2 mb-2">
-            <span className={`h-2.5 w-2.5 rounded-full ${e.is_published ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-            <span className="font-semibold text-gray-900">{e.is_published ? t.adminEventDetail.statusPublished : t.adminEventDetail.statusDraft}</span>
+            <span className={`h-2.5 w-2.5 rounded-full ${isActuallyPublished ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+            <span className="font-semibold text-gray-900">{isActuallyPublished ? t.adminEventDetail.statusPublished : t.adminEventDetail.statusDraft}</span>
           </div>
-          {e.is_published ? (
+          {isActuallyPublished ? (
             <div className="mt-3">
               <p className="text-xs text-gray-500 mb-1">{t.adminEventDetail.publicLink}</p>
               <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
@@ -222,8 +225,8 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
             <FieldRow
               label={t.adminEventDetail.state}
               value={
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATE_STYLES[e.state as keyof typeof STATE_STYLES] ?? 'bg-gray-100 text-gray-600'}`}>
-                  {e.state as string}
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATE_STYLES[computedState as keyof typeof STATE_STYLES] ?? 'bg-gray-100 text-gray-600'}`}>
+                  {computedState}
                 </span>
               }
             />

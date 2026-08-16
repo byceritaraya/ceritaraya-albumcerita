@@ -32,7 +32,7 @@ export function ResetPinButton({ eventId, target = 'legacy' }: { eventId: string
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-left ac-modal-enter">
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-left ac-modal-enter" data-hmr="force">
             <h2 id="reset-pin-modal-title" className="text-lg font-bold text-gray-900">{t.adminResetPin.title(title)}</h2>
             <div className="mt-4 text-sm text-gray-500 space-y-1">
               <p>{t.adminResetPin.desc1}</p>

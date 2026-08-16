@@ -12,6 +12,8 @@ interface Event {
   name: string;
   state: EventState;
   created_at: string;
+  is_published: boolean;
+  auto_publish_at: string | null;
 }
 
 const STATE_STYLES: Record<EventState, string> = {
@@ -27,7 +29,7 @@ export default async function AdminEventsPage() {
 
   const { data: events, error } = await supabase
     .from('events')
-    .select('id, event_id, name, state, created_at')
+    .select('id, event_id, name, state, created_at, is_published, auto_publish_at')
     .order('created_at', { ascending: false });
 
   return (
@@ -82,13 +84,17 @@ export default async function AdminEventsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {(events as Event[]).map((event) => (
-                <EventRow 
-                  key={event.id} 
-                  event={event} 
-                  stateStyles={STATE_STYLES}
-                />
-              ))}
+              {(events as Event[]).map((event) => {
+                const isActuallyPublished = Boolean(event.is_published || (event.auto_publish_at && new Date() >= new Date(event.auto_publish_at)));
+                const computedState = isActuallyPublished && event.state === 'draft' ? 'published' : event.state;
+                return (
+                  <EventRow 
+                    key={event.id} 
+                    event={{ ...event, state: computedState as EventState }} 
+                    stateStyles={STATE_STYLES}
+                  />
+                );
+              })}
             </tbody>
           </table>
 
