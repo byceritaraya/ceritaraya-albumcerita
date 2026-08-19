@@ -142,6 +142,11 @@ export class FilmRenderer {
         img.crossOrigin = 'anonymous';
       }
 
+      const cleanup = () => {
+        img.onload = null;
+        img.onerror = null;
+      };
+
       img.onload = async () => {
         try {
           const canvas = document.createElement('canvas');
@@ -161,6 +166,7 @@ export class FilmRenderer {
 
           canvas.toBlob(
             (blob) => {
+              cleanup();
               if (blob) {
                 resolve(URL.createObjectURL(blob));
               } else {
@@ -171,11 +177,16 @@ export class FilmRenderer {
             0.9,
           );
         } catch (err) {
+          cleanup();
           reject(err);
         }
       };
 
-      img.onerror = () => reject(new Error(`Failed to load image: ${imageSource}`));
+      img.onerror = () => {
+        cleanup();
+        reject(new Error(`Failed to load image: ${imageSource}`));
+      };
+      
       img.src = imageSource;
     });
   }

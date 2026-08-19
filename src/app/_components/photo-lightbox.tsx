@@ -9,6 +9,7 @@ import { FilmImage } from '@/lib/film/FilmImage';
 
 export interface PhotoLightboxProps {
   photoId: string;
+  storagePath: string;
   photoUrl: string;
   guestName?: string;
   uploadedAt?: string;
@@ -48,7 +49,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export function PhotoLightbox({ 
-  photoId, photoUrl, guestName, uploadedAt, 
+  photoId, storagePath, photoUrl, guestName, uploadedAt, 
   onClose, onPrev, onNext, hasPrev, hasNext, 
   eventName, photoNumber, filmRecipe,
   onDelete, onRetake, isPublished, theme 
@@ -133,22 +134,23 @@ export function PhotoLightbox({
 
   const handleDownload = async () => {
     try {
-      const res = await fetch(photoUrl);
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      
       const sanitize = (name: string) => name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
       const safeEvent = sanitize(eventName);
       const safeContributor = sanitize(guestName || 'You');
       const safeNumber = photoNumber.toString().padStart(3, '0');
       
-      link.download = `${safeEvent}_${safeContributor}_${safeNumber}.jpg`;
+      const filename = `${safeEvent}_${safeContributor}_${safeNumber}.jpg`;
+      
+      // We pass the true storage path (object key) to the proxy
+      // The proxy will resolve the key to a presigned URL internally and stream the download, bypassing CORS.
+      const downloadUrl = `/api/media/download?key=${encodeURIComponent(storagePath)}&filename=${encodeURIComponent(filename)}&download=1`;
+      
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
     } catch {
       console.error('Failed to download image.');
     }

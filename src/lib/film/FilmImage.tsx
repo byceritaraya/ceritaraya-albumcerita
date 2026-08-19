@@ -8,6 +8,7 @@ export interface FilmImageProps extends React.ImgHTMLAttributes<HTMLImageElement
   photoId: string;
   src: string;
   recipeSettings?: FilmRecipeSettings | null;
+  storagePath?: string;
 }
 
 /**
@@ -31,7 +32,7 @@ export interface FilmImageProps extends React.ImgHTMLAttributes<HTMLImageElement
  *    cache. This component never calls URL.revokeObjectURL() directly.
  *    Cleanup is handled by FilmRenderer.clearCache() at a higher level.
  */
-export function FilmImage({ photoId, src, recipeSettings, className, alt, ...props }: FilmImageProps) {
+export function FilmImage({ photoId, src, recipeSettings, storagePath, className, alt, ...props }: FilmImageProps) {
   const [renderedSrc, setRenderedSrc] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -74,7 +75,13 @@ export function FilmImage({ photoId, src, recipeSettings, className, alt, ...pro
       return;
     }
 
-    FilmRenderer.render(photoId, src, recipeSettings)
+    // Proxy the image through Next.js if Cloudeka has strict CORS preventing crossOrigin canvas drawing.
+    // This entirely bypasses the browser's CORS cache issue.
+    const renderSrcUrl = storagePath 
+      ? `/api/media/download?key=${encodeURIComponent(storagePath)}` 
+      : src;
+
+    FilmRenderer.render(photoId, renderSrcUrl, recipeSettings)
       .then((url) => {
         if (!cancelled) setRenderedSrc(url);
       })
@@ -89,13 +96,17 @@ export function FilmImage({ photoId, src, recipeSettings, className, alt, ...pro
     // recipeKey replaces recipeSettings in the dep array to avoid
     // re-firing on new-reference-but-same-value object props.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVisible, photoId, src, recipeKey]);
+  }, [isVisible, photoId, src, storagePath, recipeKey]);
 
-  // ── Render ────────────────────────────────────────────────────────────────
   // A single <img> element maintained throughout the component lifetime.
   // Before the render is ready, we show the original at reduced opacity/blur
   // as a placeholder that makes the layout feel responsive.
   const isReady = renderedSrc !== null;
+
+  // Set crossOrigin to anonymous if the source is an absolute URL.
+  // This prevents the browser from caching a non-CORS response which would
+  // later cause FilmRenderer's canvas rendering to fail with a CORS error.
+  const isRemoteUrl = src.startsWith('http://') || src.startsWith('https://');
 
   // eslint-disable-next-line @next/next/no-img-element
   return (
@@ -104,6 +115,7 @@ export function FilmImage({ photoId, src, recipeSettings, className, alt, ...pro
         ref={imgRef}
         src={isReady ? renderedSrc! : src}
         alt={alt}
+        crossOrigin={isRemoteUrl && !isReady ? 'anonymous' : undefined}
         className={`w-full h-full object-cover ${
           isReady
             ? 'transition-opacity duration-300'

@@ -128,19 +128,25 @@ async function resolveMediaKey(objectKey: string): Promise<string> {
     return resolvedKeyCache.get(objectKey)!;
   }
 
-  // 1. Try root key (new uploads)
-  const existsAtRoot = await mediaExists(objectKey);
-  if (existsAtRoot) {
-    resolvedKeyCache.set(objectKey, objectKey);
-    return objectKey;
-  }
+  try {
+    // 1. Try root key (new uploads)
+    const existsAtRoot = await mediaExists(objectKey);
+    if (existsAtRoot) {
+      resolvedKeyCache.set(objectKey, objectKey);
+      return objectKey;
+    }
 
-  // 2. Fallback to legacy Supabase Storage prefix
-  const legacyKey = `albumcerita_photos/${objectKey}`;
-  const existsAtLegacy = await mediaExists(legacyKey);
-  if (existsAtLegacy) {
-    resolvedKeyCache.set(objectKey, legacyKey);
-    return legacyKey;
+    // 2. Fallback to legacy Supabase Storage prefix
+    const legacyKey = `albumcerita_photos/${objectKey}`;
+    const existsAtLegacy = await mediaExists(legacyKey);
+    if (existsAtLegacy) {
+      resolvedKeyCache.set(objectKey, legacyKey);
+      return legacyKey;
+    }
+  } catch (err) {
+    console.error('[media] resolveMediaKey existence check failed:', err);
+    // On network/auth errors, do not cache anything, but safely fallback
+    return objectKey;
   }
 
   // 3. If neither found (deleted or missing), default to root key 
@@ -246,7 +252,14 @@ export async function mediaExists(objectKey: string): Promise<boolean> {
     const s3 = getS3Client();
     await s3.send(new HeadObjectCommand({ Bucket: BUCKET, Key: objectKey }));
     return true;
-  } catch {
-    return false;
+  } catch (err) {
+    // 404 means the object doesn't exist
+    const error = err as Error & { $metadata?: { httpStatusCode?: number } };
+    if (error.name === 'NotFound' || error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
+      return false;
+    }
+    // Auth errors, network errors, configuration errors, etc.
+    // MUST NOT be swallowed as a false "does not exist".
+    throw err;
   }
 }

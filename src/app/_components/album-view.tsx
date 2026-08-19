@@ -188,6 +188,7 @@ function PhotoCard({
         {stableFilmRecipe ? (
           <FilmImage
             photoId={photo.id}
+            storagePath={photo.storage_path}
             src={photo.original_url}
             recipeSettings={stableFilmRecipe}
             alt={`Photo by ${photo.guest_name}`}
@@ -761,6 +762,7 @@ export function AlbumView({
       {selectedIndex !== null && visiblePhotos[selectedIndex] && (
         <PhotoLightbox
           photoId={visiblePhotos[selectedIndex].id}
+          storagePath={visiblePhotos[selectedIndex].storage_path}
           photoUrl={visiblePhotos[selectedIndex].original_url}
           guestName={visiblePhotos[selectedIndex].guest_name}
           uploadedAt={visiblePhotos[selectedIndex].uploaded_at}
