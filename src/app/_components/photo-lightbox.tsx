@@ -9,7 +9,7 @@ import { FilmImage } from '@/lib/film/FilmImage';
 
 export interface PhotoLightboxProps {
   photoId: string;
-  storagePath: string;
+  storagePath?: string; // Optional: not available for in-flight/preview-only photos (e.g. film-roll-queue)
   photoUrl: string;
   guestName?: string;
   uploadedAt?: string;
@@ -140,6 +140,12 @@ export function PhotoLightbox({
       const safeNumber = photoNumber.toString().padStart(3, '0');
       
       const filename = `${safeEvent}_${safeContributor}_${safeNumber}.jpg`;
+      
+      if (!storagePath) {
+        // No S3 key available (e.g. preview/blob URL) — cannot download
+        console.warn('[PhotoLightbox] Download requested but no storagePath available.');
+        return;
+      }
       
       // We pass the true storage path (object key) to the proxy
       // The proxy will resolve the key to a presigned URL internally and stream the download, bypassing CORS.

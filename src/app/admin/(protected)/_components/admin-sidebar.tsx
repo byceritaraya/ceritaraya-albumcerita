@@ -42,7 +42,7 @@ function NavItem({ href, icon: Icon, children, disabled = false }: NavItemProps)
 
 export function AdminSidebar({ userEmail }: { userEmail: string | undefined }) {
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col">
+    <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col h-dvh overflow-y-auto sticky top-0">
       <div className="h-16 flex items-center px-6 border-b border-gray-100">
         <span className="text-lg font-bold tracking-tight text-gray-900">Cerita Raya</span>
       </div>
@@ -57,8 +57,12 @@ export function AdminSidebar({ userEmail }: { userEmail: string | undefined }) {
           Management
         </div>
         <NavItem href="/admin/clients" icon={Users}>Clients</NavItem>
-        <NavItem href="/admin/events" icon={Calendar} disabled>Events</NavItem>
-        <NavItem href="/admin/services" icon={Box} disabled>Services</NavItem>
+        <NavItem href="/admin/events" icon={Calendar}>Events</NavItem>
+        
+        <div className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">
+          Services
+        </div>
+        <NavItem href="/admin/services" icon={Box}>Services</NavItem>
         <NavItem href="/admin/orders" icon={ShoppingCart} disabled>Orders</NavItem>
         
         <div className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">

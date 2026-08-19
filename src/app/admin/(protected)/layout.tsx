@@ -46,11 +46,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="h-dvh bg-gray-50 flex overflow-hidden">
       <AdminSidebar userEmail={user.email} />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 min-w-0 overflow-y-auto">
         {children}
       </main>
     </div>

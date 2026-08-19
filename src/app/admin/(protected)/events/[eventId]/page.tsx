@@ -302,14 +302,13 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
                         </span>
                       </div>
                     </div>
-                    <button
-                      disabled
-                      title="Configuration coming in a future phase"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-400 cursor-not-allowed"
+                    <Link
+                      href={`/admin/events/${e.event_id}/services/${svc.slug}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                       <Settings className="w-3.5 h-3.5" />
                       Configure
-                    </button>
+                    </Link>
                   </div>
                 );
               })}
