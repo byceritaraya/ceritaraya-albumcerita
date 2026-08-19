@@ -33,7 +33,9 @@ export default async function ClientDetailPage({
       state,
       event_date,
       created_at,
-      event_services(count)
+      event_services(
+        services(name)
+      )
     `)
     .eq('client_id', clientId)
     .order('created_at', { ascending: false });
@@ -57,85 +59,86 @@ export default async function ClientDetailPage({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Client Form */}
-        <div className="lg:col-span-2">
+      <div className="flex flex-col gap-8">
+        {/* Top Section: Client Form */}
+        <div>
           <ClientForm client={client} />
         </div>
 
-        {/* Right Column: Events */}
+        {/* Bottom Section: Event History */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-full">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900">Events</h2>
+              <h2 className="text-sm font-semibold text-gray-900">Event History</h2>
+              <Link
+                href={`/admin/clients/${clientId}/events/new`}
+                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Create Event
+              </Link>
             </div>
             
-            <div className="p-6 flex-1 flex flex-col">
+            <div className="p-6">
               {!eventsError && events && events.length > 0 ? (
-                <div className="space-y-4 flex-1">
-                  {events.map((event) => (
-                    <div key={event.id} className="p-4 rounded-lg border border-gray-100 bg-gray-50/30">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-900">{event.name}</h3>
-                          <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
+                <div className="flex flex-col gap-4">
+                  {events.map((event) => {
+                    const servicesText = event.event_services && event.event_services.length > 0 
+                      ? event.event_services.map((s) => (s as { services?: { name?: string } }).services?.name).filter(Boolean).join(' • ') 
+                      : '0 Services';
+                    return (
+                      <div key={event.id} className="p-5 rounded-xl border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-gray-900 truncate">{event.name}</h3>
+                          <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
+                            <Calendar className="w-4 h-4 shrink-0" />
+                            <span>
                               {event.event_date
-                                ? new Date(event.event_date).toLocaleDateString('en-GB', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric',
-                                    timeZone: 'UTC',
-                                  })
-                                : new Date(event.created_at).toLocaleDateString('en-GB', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric',
-                                  })}
+                                ? new Date(event.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+                                : new Date(event.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
-                            <span>&bull;</span>
-                            <span>{event.event_services?.[0]?.count || 0} Services</span>
+                          </div>
+                          <div className="mt-3">
+                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Services</span>
+                            <p className="text-sm text-gray-700 mt-0.5 truncate">{servicesText}</p>
                           </div>
                         </div>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${
-                          event.state === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                          event.state === 'published' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-600'
-                        }`}>
-                          {event.state}
-                        </span>
+                        
+                        <div className="flex flex-col items-end gap-3 shrink-0 h-full justify-between">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            event.state === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                            event.state === 'published' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {event.state}
+                          </span>
+                          <Link 
+                            href={`/admin/events/${event.event_id}`} 
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors mt-auto"
+                          >
+                            View Event <span aria-hidden="true">&rarr;</span>
+                          </Link>
+                        </div>
                       </div>
-                      <div className="mt-4 pt-4 border-t border-gray-100">
-                        <Link 
-                          href={`/admin/events/${event.event_id}`} 
-                          className="text-xs font-medium text-blue-600 hover:text-blue-700 block text-center"
-                        >
-                          View Event
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
-                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center mb-3">
-                    <Calendar className="w-5 h-5 text-gray-400" />
+                <div className="flex flex-col items-center justify-center text-center py-12 bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                    <Calendar className="w-6 h-6 text-gray-400" />
                   </div>
                   <p className="text-sm font-medium text-gray-900">No events yet</p>
-                  <p className="text-xs text-gray-500 mt-1">This client doesn&apos;t have any events.</p>
+                  <p className="text-xs text-gray-500 mt-1 mb-6 max-w-sm">This client doesn&apos;t have any events associated with them yet.</p>
+                  <Link
+                    href={`/admin/clients/${clientId}/events/new`}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create First Event
+                  </Link>
                 </div>
               )}
-
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <Link
-                  href={`/admin/clients/${clientId}/events/new`}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create Event
-                </Link>
-              </div>
             </div>
           </div>
         </div>

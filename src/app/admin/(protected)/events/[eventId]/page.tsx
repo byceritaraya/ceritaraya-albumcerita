@@ -1,19 +1,11 @@
 import { notFound } from 'next/navigation';
-import { cookies, headers } from 'next/headers';
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/service';
-import { decodePinFlash, PIN_FLASH_COOKIE } from '@/lib/pin-flash';
-import { PinBanner } from './pin-banner';
-import { AccessCard } from './access-cards';
-import { EditEventForm } from './edit-event-form';
 import { getT } from '@/lib/i18n/server';
 import { LangSwitcher } from '@/app/_components/lang-switcher';
-import { Settings } from 'lucide-react';
-import { getMediaUrl } from '@/lib/media';
+import { Settings, Calendar, Briefcase, ExternalLink, Activity } from 'lucide-react';
 
 type EventState = 'draft' | 'published' | 'expired' | 'archived';
-
-
 
 const STATE_STYLES: Record<EventState, string> = {
   draft: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
@@ -30,20 +22,6 @@ function formatDate(iso: string): string {
   });
 }
 
-interface FieldRowProps {
-  label: string;
-  value: React.ReactNode;
-}
-
-function FieldRow({ label, value }: FieldRowProps) {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-1 py-4 border-b border-gray-100 last:border-0">
-      <dt className="w-48 shrink-0 text-sm font-medium text-gray-500">{label}</dt>
-      <dd className="text-sm text-gray-900">{value}</dd>
-    </div>
-  );
-}
-
 interface PageProps {
   params: Promise<{ eventId: string }>;
 }
@@ -51,35 +29,17 @@ interface PageProps {
 export default async function AdminEventDetailPage({ params }: PageProps) {
   const { eventId } = await params;
 
-  // Build absolute base URL for QR codes
-  const headersList = await headers();
-  const host = headersList.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const baseUrl = `${protocol}://${host}`;
-
-  // Read one-time PIN flash cookie
-  const cookieStore = await cookies();
-  const flashRaw = cookieStore.get(PIN_FLASH_COOKIE)?.value;
-  const flashData = decodePinFlash(flashRaw, eventId);
-
   const supabase = createServiceClient();
   const t = await getT();
 
   const { data: e, error } = await supabase
     .from('events')
     .select(`
-      id, event_id, name, state, event_type, retention_months, max_contributors,
-      photos_per_guest, slug, host_name, theme, created_at, expires_at,
-      is_published, cover_image_url, film_recipe_id, auto_publish_at, client_id
+      id, event_id, name, state, event_type, event_date,
+      created_at, is_published, auto_publish_at, client_id
     `)
     .eq('event_id', eventId)
     .single();
-
-  const { data: recipes } = await supabase
-    .from('film_recipes')
-    .select('id, name')
-    .eq('active', true)
-    .order('name');
 
   if (error?.code === 'PGRST116' || (!error && !e)) {
     notFound();
@@ -95,7 +55,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
     );
   }
 
-  // Fetch client and event_services in parallel (after we know the event exists)
+  // Fetch client and event_services in parallel
   const [clientResult, eventServicesResult] = await Promise.all([
     e.client_id
       ? supabase
@@ -113,11 +73,6 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
   const clientData = clientResult.data;
   const eventServices = eventServicesResult.data ?? [];
 
-  let finalCoverUrl = e.cover_image_url ?? null;
-  if (finalCoverUrl) {
-    finalCoverUrl = await getMediaUrl(finalCoverUrl);
-  }
-
   const isActuallyPublished = Boolean(e.is_published || (e.auto_publish_at && new Date() >= new Date(e.auto_publish_at)));
   const computedState = isActuallyPublished && e.state === 'draft' ? 'published' : (e.state as string);
 
@@ -126,11 +81,6 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
       <div className="absolute top-6 right-6">
         <LangSwitcher className="!bg-gray-100 !border-gray-200 !text-gray-600 hover:!text-gray-900 !backdrop-blur-none" />
       </div>
-
-      {/* One-time PIN banner — only rendered right after creation or legacy PIN reset */}
-      {flashData && flashData.pin && (
-        <PinBanner eventId={e.event_id} pin={flashData.pin} isReset={flashData.isReset} />
-      )}
       
       {/* Breadcrumb */}
       <nav className="mb-6 mt-6 flex items-center gap-2 text-sm text-gray-400">
@@ -142,12 +92,20 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
       </nav>
 
       {/* Header */}
-      <div className="mb-8 flex items-center gap-4">
+      <div className="mb-8 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{e.name}</h1>
-          <p className="mt-1 font-mono text-xs text-gray-400">{e.event_id}</p>
+          <p className="mt-1 font-mono text-xs text-gray-400 flex items-center gap-2">
+            {e.event_id}
+            {e.event_date && (
+              <>
+                <span>&bull;</span>
+                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDate(e.event_date)}</span>
+              </>
+            )}
+          </p>
         </div>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <span
             className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium capitalize ${STATE_STYLES[computedState as keyof typeof STATE_STYLES] ?? 'bg-gray-100 text-gray-600'}`}
           >
@@ -156,165 +114,107 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-8">
-        {/* Guest & Host Access Sections */}
-        {e.slug && (
-          <div className="space-y-4">
-            <AccessCard 
-              eventId={e.event_id}
-              title={t.adminEventDetail.guestAccess}
-              type="guest"
-              slug={e.slug} 
-              pin={flashData?.guestPin} 
-              baseUrl={baseUrl} 
-            />
-            <AccessCard 
-              eventId={e.event_id}
-              title={t.adminEventDetail.hostAccess}
-              type="host"
-              slug={e.slug} 
-              pin={flashData?.hostPin} 
-              baseUrl={baseUrl} 
-            />
-          </div>
-        )}
-
-        {/* Publish Status */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-            {t.adminEventDetail.albumStatus}
-          </h2>
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`h-2.5 w-2.5 rounded-full ${isActuallyPublished ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-            <span className="font-semibold text-gray-900">{isActuallyPublished ? t.adminEventDetail.statusPublished : t.adminEventDetail.statusDraft}</span>
-          </div>
-          {isActuallyPublished ? (
-            <div className="mt-3">
-              <p className="text-xs text-gray-500 mb-1">{t.adminEventDetail.publicLink}</p>
-              <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                <span className="text-sm font-mono text-gray-800 break-all mr-3">
-                  {baseUrl}/album/{e.slug}
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 mt-2">
-                {t.adminEventDetail.publicHelper}
-              </p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left Column: Active Services (Primary) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-gray-500" />
+              <h2 className="text-sm font-semibold text-gray-900">Active Services</h2>
             </div>
-          ) : (
-            <p className="text-sm text-gray-500 mt-1">
-              {t.adminEventDetail.draftHelper}
-            </p>
-          )}
-        </div>
-
-        {/* Edit Event Form */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-              {t.adminEventDetail.eventConfig}
-            </h2>
-          </div>
-          <div className="px-6 py-4">
-            <EditEventForm
-              eventId={e.event_id}
-              availableRecipes={recipes || []}
-              initialValues={{
-                name: e.name,
-                host_name: e.host_name ?? '',
-                theme: e.theme ?? 'Sage',
-                retention_months: e.retention_months,
-                max_contributors: e.max_contributors,
-                photos_per_guest: e.photos_per_guest,
-                cover_image_url: finalCoverUrl,
-                raw_cover_image_url: e.cover_image_url,
-                film_recipe_id: e.film_recipe_id ?? '',
-                auto_publish_at: e.auto_publish_at ? new Date(e.auto_publish_at).toISOString().slice(0, 16) : '',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Read-only system details */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">{t.adminEventDetail.sysInfo}</h2>
-          </div>
-          <dl className="px-6 divide-y divide-gray-100">
-            <FieldRow label={t.adminEventDetail.legacyEventId} value={<span className="font-mono text-xs">{e.event_id}</span>} />
-            <FieldRow
-              label={t.adminEventDetail.state}
-              value={
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATE_STYLES[computedState as keyof typeof STATE_STYLES] ?? 'bg-gray-100 text-gray-600'}`}>
-                  {computedState}
-                </span>
-              }
-            />
-            <FieldRow label={t.adminEventDetail.created} value={formatDate(e.created_at)} />
-          </dl>
-        </div>
-
-        {/* Client panel */}
-        {clientData && clientData.client_code !== 'CLI-0000' && (
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Client</h2>
-            </div>
-            <div className="px-6 py-5 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-gray-900">{clientData.name}</p>
-                <p className="text-xs font-mono text-gray-400 mt-0.5">{clientData.client_code}</p>
-              </div>
-              <Link
-                href={`/admin/clients/${clientData.id}`}
-                className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
-              >
-                View Client →
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* Services panel */}
-        {eventServices.length > 0 && (
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Services</h2>
-            </div>
-            <div className="divide-y divide-gray-100">
-              {eventServices.map((es) => {
-                const svc = Array.isArray(es.services) ? es.services[0] : es.services;
-                const serviceName = svc?.name ?? 'Unknown Service';
-                return (
-                  <div key={es.id} className="px-6 py-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{serviceName}</p>
-                        <span
-                          className={`inline-flex mt-1 items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${
-                            es.status === 'active'
-                              ? 'bg-green-100 text-green-700'
-                              : es.status === 'pending_setup'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-gray-100 text-gray-500'
-                          }`}
-                        >
-                          {es.status === 'pending_setup' ? 'Pending Setup' : es.status}
-                        </span>
+            
+            <div className="p-6">
+              {eventServices.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {eventServices.map((es) => {
+                    const svc = Array.isArray(es.services) ? es.services[0] : es.services;
+                    const serviceName = svc?.name ?? 'Unknown Service';
+                    return (
+                      <div key={es.id} className="border border-gray-200 rounded-xl p-5 flex flex-col h-full hover:border-gray-300 transition-colors bg-gray-50/50">
+                        <div className="flex items-start justify-between mb-4">
+                          <h3 className="font-semibold text-gray-900 text-base">{serviceName}</h3>
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${
+                              es.status === 'active'
+                                ? 'bg-green-100 text-green-700'
+                                : es.status === 'pending_setup'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-gray-100 text-gray-500'
+                            }`}
+                          >
+                            {es.status === 'pending_setup' ? 'Pending Setup' : es.status}
+                          </span>
+                        </div>
+                        
+                        <div className="mt-auto pt-4">
+                          <Link
+                            href={`/admin/events/${e.event_id}/services/${svc.slug}`}
+                            className="inline-flex items-center justify-center w-full gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                          >
+                            Open {serviceName} <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                    <Link
-                      href={`/admin/events/${e.event_id}/services/${svc.slug}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <Settings className="w-3.5 h-3.5" />
-                      Configure
-                    </Link>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">No services active for this event.</p>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Right Column: Context Information */}
+        <div className="space-y-6">
+          {/* Client Panel */}
+          {clientData && clientData.client_code !== 'CLI-0000' && (
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-gray-500" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Client Info</h2>
+              </div>
+              <div className="p-5 flex flex-col gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{clientData.name}</p>
+                  <p className="text-xs font-mono text-gray-400 mt-0.5">{clientData.client_code}</p>
+                </div>
+                <Link
+                  href={`/admin/clients/${clientData.id}`}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  View Client Profile
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* System Information */}
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+              <Settings className="w-4 h-4 text-gray-500" />
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500">System Information</h2>
+            </div>
+            <dl className="px-5 divide-y divide-gray-100">
+              <div className="py-3 flex justify-between">
+                <dt className="text-xs font-medium text-gray-500">Event Type</dt>
+                <dd className="text-xs font-medium text-gray-900 capitalize">{e.event_type || '—'}</dd>
+              </div>
+              <div className="py-3 flex justify-between">
+                <dt className="text-xs font-medium text-gray-500">Legacy Event ID</dt>
+                <dd className="font-mono text-xs text-gray-900">{e.event_id}</dd>
+              </div>
+              <div className="py-3 flex justify-between">
+                <dt className="text-xs font-medium text-gray-500">{t.adminEventDetail.created}</dt>
+                <dd className="text-xs text-gray-900">{formatDate(e.created_at)}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+        
       </div>
     </div>
   );

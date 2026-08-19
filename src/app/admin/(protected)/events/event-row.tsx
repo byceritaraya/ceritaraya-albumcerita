@@ -13,7 +13,10 @@ interface EventRowProps {
     event_id: string;
     name: string;
     state: EventState;
+    event_date: string | null;
     created_at: string;
+    clients?: { name: string } | null;
+    event_services?: { count: number }[] | null;
   };
   stateStyles: Record<EventState, string>;
 }
@@ -55,9 +58,18 @@ export function EventRow({ event, stateStyles }: EventRowProps) {
           >
             {event.name}
           </Link>
+          <div className="text-xs text-gray-400 font-normal mt-0.5 font-mono">{event.event_id}</div>
         </td>
-        <td className="px-5 py-4 font-mono text-xs text-gray-500">
-          {event.event_id}
+        <td className="px-5 py-4 font-medium text-gray-700">
+          {event.clients?.name || '—'}
+        </td>
+        <td className="px-5 py-4 text-gray-500 text-xs">
+          {event.event_date ? formatDate(event.event_date) : '—'}
+        </td>
+        <td className="px-5 py-4">
+          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+            {event.event_services?.[0]?.count || 0}
+          </span>
         </td>
         <td className="px-5 py-4">
           <span
@@ -65,9 +77,6 @@ export function EventRow({ event, stateStyles }: EventRowProps) {
           >
             {event.state}
           </span>
-        </td>
-        <td className="px-5 py-4 text-gray-500 text-xs">
-          {formatDate(event.created_at)}
         </td>
         <td className="px-5 py-4 text-right">
           <div className="flex items-center justify-end gap-3 text-xs font-medium">

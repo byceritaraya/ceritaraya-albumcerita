@@ -11,9 +11,12 @@ interface Event {
   event_id: string;
   name: string;
   state: EventState;
+  event_date: string | null;
   created_at: string;
   is_published: boolean;
   auto_publish_at: string | null;
+  clients?: { name: string } | null;
+  event_services?: { count: number }[] | null;
 }
 
 const STATE_STYLES: Record<EventState, string> = {
@@ -29,7 +32,7 @@ export default async function AdminEventsPage() {
 
   const { data: events, error } = await supabase
     .from('events')
-    .select('id, event_id, name, state, created_at, is_published, auto_publish_at')
+    .select('id, event_id, name, state, event_date, created_at, is_published, auto_publish_at, clients(name), event_services(count)')
     .order('created_at', { ascending: false });
 
   return (
@@ -77,14 +80,15 @@ export default async function AdminEventsPage() {
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50 text-left">
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">{t.adminEvents.colName}</th>
-                <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">{t.adminEvents.colId}</th>
+                <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">Client</th>
+                <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">Date</th>
+                <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">Services</th>
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">{t.adminEvents.colState}</th>
-                <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">{t.adminEvents.colCreated}</th>
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide text-right">{t.adminEvents.colActions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {(events as Event[]).map((event) => {
+              {(events as unknown as Event[]).map((event) => {
                 const isActuallyPublished = Boolean(event.is_published || (event.auto_publish_at && new Date() >= new Date(event.auto_publish_at)));
                 const computedState = isActuallyPublished && event.state === 'draft' ? 'published' : event.state;
                 return (

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/service';
-import { CreateEventWizard } from './create-event-wizard';
+import { SharedEventWizard } from '@/app/admin/(protected)/_components/shared-event-wizard';
 
 interface PageProps {
   params: Promise<{ clientId: string }>;
@@ -47,7 +47,7 @@ export default async function NewClientEventPage({ params }: PageProps) {
         </div>
 
         {/* Page header */}
-        <div className="mb-10">
+        <div className="mb-10 text-center">
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Create Event</h1>
           <p className="mt-1 text-sm text-gray-500">
             Set up a new event and select its services.
@@ -86,7 +86,7 @@ export default async function NewClientEventPage({ params }: PageProps) {
           </div>
         ) : (
           /* Wizard */
-          <CreateEventWizard client={client} services={activeServices} />
+          <SharedEventWizard mode="client" initialClient={client} services={activeServices} />
         )}
       </div>
     </div>
