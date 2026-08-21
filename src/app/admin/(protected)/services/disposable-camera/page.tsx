@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getFilmRecipesForAdmin } from '@/lib/film/recipes';
 import { Camera, Calendar, Image as ImageIcon } from 'lucide-react';
 
 export default async function DisposableCameraOverview() {
@@ -11,9 +12,9 @@ export default async function DisposableCameraOverview() {
     // Hardcode service slug lookup or just assume all 'active' for now since we're keeping it simple
     .eq('status', 'active');
     
-  const { count: recipesCount } = await supabase
-    .from('film_recipes')
-    .select('*', { count: 'exact', head: true });
+  const { data: recipes } = await getFilmRecipesForAdmin();
+  const recipesCount = recipes?.length ?? 0;
+  const activeRecipesCount = recipes?.filter(r => r.active).length ?? 0;
 
   return (
     <div className="p-8 max-w-4xl">
@@ -38,7 +39,8 @@ export default async function DisposableCameraOverview() {
             <ImageIcon className="w-5 h-5" />
             <span className="text-sm font-medium">Film Recipes</span>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{recipesCount ?? 0}</p>
+          <p className="text-3xl font-bold text-gray-900">{recipesCount}</p>
+          <p className="text-sm text-gray-500 mt-1">{activeRecipesCount} active</p>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm opacity-50">

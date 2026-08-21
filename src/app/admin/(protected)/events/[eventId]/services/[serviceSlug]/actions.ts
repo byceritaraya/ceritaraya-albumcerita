@@ -70,10 +70,12 @@ export async function saveDisposableCameraConfigAction(
   }
 
   // ── 3. Confirm event exists ─────────────────────────────────────────────────
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId);
+  
   const { data: event, error: eventError } = await supabase
     .from('events')
     .select('id, event_id')
-    .eq('event_id', eventId)
+    .eq(isUuid ? 'id' : 'event_id', eventId)
     .single();
 
   if (eventError || !event) {

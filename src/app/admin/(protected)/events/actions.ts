@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 import { generatePin, hashPin } from '@/lib/pin';
 import { encodePinFlash, PIN_FLASH_COOKIE, PIN_FLASH_MAX_AGE } from '@/lib/pin-flash';
 import { generateEventId, generateSlug, resolveSlug, getExpiresAt } from '@/lib/event-generators';
+import { encryptText } from '@/lib/encryption';
 
 export type CreateEventState = {
   error?: string;
@@ -24,10 +25,11 @@ export async function deleteEventAction(eventId: string) {
 
   // Since all relations (photos, contributors, client_sessions, pin_attempts)
   // use ON DELETE CASCADE, deleting the event will clean up everything automatically.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId);
   const { error } = await supabase
     .from('events')
     .delete()
-    .eq('event_id', eventId);
+    .eq(isUuid ? 'id' : 'event_id', eventId);
 
   if (error) {
     console.error('Error deleting event:', error);
@@ -122,6 +124,7 @@ export async function createEventAction(
   const pinHash = hashPin(pin);
   const hostPin = generatePin();
   const hostPinHash = hashPin(hostPin);
+  const hostPinEncrypted = encryptText(hostPin);
   const guestPin = generatePin();
   const guestPinHash = hashPin(guestPin);
 
@@ -137,6 +140,7 @@ export async function createEventAction(
       p_client_id: clientId,
       p_pin_hash: pinHash,
       p_host_pin_hash: hostPinHash,
+      p_host_pin_encrypted: hostPinEncrypted,
       p_guest_pin_hash: guestPinHash,
       p_guest_pin: guestPin,
       p_photos_per_guest: DEFAULTS.photos_per_guest,

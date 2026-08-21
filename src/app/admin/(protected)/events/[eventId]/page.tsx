@@ -32,13 +32,15 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
   const supabase = createServiceClient();
   const t = await getT();
 
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId);
+
   const { data: e, error } = await supabase
     .from('events')
     .select(`
       id, event_id, name, state, event_type, event_date,
       created_at, is_published, auto_publish_at, client_id
     `)
-    .eq('event_id', eventId)
+    .eq(isUuid ? 'id' : 'event_id', eventId)
     .single();
 
   if (error?.code === 'PGRST116' || (!error && !e)) {

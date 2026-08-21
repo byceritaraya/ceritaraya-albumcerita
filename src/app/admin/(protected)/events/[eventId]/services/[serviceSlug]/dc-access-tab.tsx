@@ -8,9 +8,11 @@ interface Props {
   slug: string | null;
   baseUrl: string;
   flashData?: { guestPin?: string; hostPin?: string } | null;
+  dbGuestPin?: string | null;
+  dbHostPin?: string | null;
 }
 
-export function DcAccessTab({ eventId, slug, baseUrl, flashData }: Props) {
+export function DcAccessTab({ eventId, slug, baseUrl, flashData, dbGuestPin, dbHostPin }: Props) {
   const { t } = useT();
 
   if (!slug) {
@@ -33,7 +35,7 @@ export function DcAccessTab({ eventId, slug, baseUrl, flashData }: Props) {
         title={t.adminEventDetail.guestAccess}
         type="guest"
         slug={slug} 
-        pin={flashData?.guestPin} 
+        pin={flashData?.guestPin || dbGuestPin || undefined} 
         baseUrl={baseUrl} 
       />
       <AccessCard 
@@ -41,8 +43,9 @@ export function DcAccessTab({ eventId, slug, baseUrl, flashData }: Props) {
         title={t.adminEventDetail.hostAccess}
         type="host"
         slug={slug} 
-        pin={flashData?.hostPin} 
+        pin={flashData?.hostPin || dbHostPin || undefined} 
         baseUrl={baseUrl} 
+        hiddenDesc="For legacy events, the Host PIN is hidden for security. Regenerate it to enable reveal functionality."
       />
     </div>
   );

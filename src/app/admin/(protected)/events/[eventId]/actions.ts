@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import { PIN_FLASH_COOKIE, encodePinFlash, PIN_FLASH_MAX_AGE } from '@/lib/pin-flash';
 import { generatePin, hashPin } from '@/lib/pin';
+import { encryptText } from '@/lib/encryption';
 import { createServiceClient } from '@/lib/supabase/service';
 import { uploadMedia } from '@/lib/media';
 import { revalidatePath } from 'next/cache';
@@ -25,14 +26,15 @@ export async function resetPinAction(eventId: string, target: 'legacy' | 'host' 
   const supabase = createServiceClient();
   
   let updateData: Record<string, string> = {};
-  if (target === 'host') updateData = { host_pin_hash: pinHash };
+  if (target === 'host') updateData = { host_pin_hash: pinHash, host_pin_encrypted: encryptText(pin) };
   else if (target === 'guest') updateData = { guest_pin_hash: pinHash, guest_pin: pin };
   else updateData = { pin_hash: pinHash };
 
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId);
   const { error } = await supabase
     .from('events')
     .update(updateData)
-    .eq('event_id', eventId);
+    .eq(isUuid ? 'id' : 'event_id', eventId);
 
   if (error) {
     return { error: error.message };
@@ -75,6 +77,7 @@ export async function updateEventAction(
   if (!data.film_recipe_id?.trim()) return { error: 'Film recipe is required.' };
 
   const supabase = createServiceClient();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId);
   const { error } = await supabase
     .from('events')
     .update({
@@ -88,7 +91,7 @@ export async function updateEventAction(
       film_recipe_id: data.film_recipe_id,
       auto_publish_at: data.auto_publish_at ? new Date(data.auto_publish_at).toISOString() : null,
     })
-    .eq('event_id', eventId);
+    .eq(isUuid ? 'id' : 'event_id', eventId);
 
   if (error) return { error: error.message };
 

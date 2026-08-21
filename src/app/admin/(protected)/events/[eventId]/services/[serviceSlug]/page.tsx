@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { headers, cookies } from 'next/headers';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { Settings, ArrowLeft, Camera, AlertCircle, Film } from 'lucide-react';
 import { DisposableCameraConfigWizard } from './disposable-camera-config-wizard';
@@ -10,6 +9,7 @@ import { DcAccessTab } from './dc-access-tab';
 import { decodePinFlash, PIN_FLASH_COOKIE } from '@/lib/pin-flash';
 import { getMediaUrl } from '@/lib/media';
 import { getActiveFilmRecipesForConfiguration } from '@/lib/film/recipes';
+import { decryptText } from '@/lib/encryption';
 
 interface PageProps {
   params: Promise<{
@@ -24,16 +24,44 @@ export default async function EventServiceConfigurationPage({ params, searchPara
   const resolvedSearchParams = await searchParams;
   const currentTab = typeof resolvedSearchParams.tab === 'string' ? resolvedSearchParams.tab : 'configuration';
   
-  const supabase = await createClient();
+  const supabase = createServiceClient();
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId);
 
   // 1. Fetch the event to ensure it exists
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, event_id, name, host_name, event_date, photos_per_guest, max_contributors, retention_months, film_recipe_id, slug, is_published, auto_publish_at, theme, cover_image_url')
-    .eq('event_id', eventId)
+    .select('id, event_id, name, host_name, event_date, photos_per_guest, max_contributors, retention_months, film_recipe_id, slug, is_published, auto_publish_at, theme, cover_image_url, guest_pin, host_pin_encrypted')
+    .eq(isUuid ? 'id' : 'event_id', eventId)
     .single();
 
-  if (eventError || !event) {
+  if (eventError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-red-200 p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Database Error</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            A database error occurred while fetching the event configuration.
+          </p>
+          <p className="text-xs font-mono text-red-500 bg-red-50 rounded px-3 py-2 mb-6 break-all">
+            {eventError.message}
+          </p>
+          <Link
+            href="/admin/events"
+            className="inline-flex items-center justify-center w-full gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Events
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!event) {
     notFound();
   }
 
@@ -203,6 +231,8 @@ export default async function EventServiceConfigurationPage({ params, searchPara
               slug={event.slug} 
               baseUrl={baseUrl} 
               flashData={flashData} 
+              dbGuestPin={event.guest_pin}
+              dbHostPin={decryptText(event.host_pin_encrypted)}
             />
           )}
         </div>

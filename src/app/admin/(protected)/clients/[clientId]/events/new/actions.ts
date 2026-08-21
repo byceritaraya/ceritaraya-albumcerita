@@ -6,6 +6,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { generatePin, hashPin } from '@/lib/pin';
 import { encodePinFlash, PIN_FLASH_COOKIE, PIN_FLASH_MAX_AGE } from '@/lib/pin-flash';
 import { generateEventId, generateSlug, resolveSlug, getExpiresAt } from '@/lib/event-generators';
+import { encryptText } from '@/lib/encryption';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -121,6 +122,7 @@ export async function createClientEventAction(
   const pinHash = hashPin(pin);
   const hostPin = generatePin();
   const hostPinHash = hashPin(hostPin);
+  const hostPinEncrypted = encryptText(hostPin);
   const guestPin = generatePin();
   const guestPinHash = hashPin(guestPin);
 
@@ -136,6 +138,7 @@ export async function createClientEventAction(
       p_client_id: clientId,
       p_pin_hash: pinHash,
       p_host_pin_hash: hostPinHash,
+      p_host_pin_encrypted: hostPinEncrypted,
       p_guest_pin_hash: guestPinHash,
       p_guest_pin: guestPin,
       p_photos_per_guest: DEFAULTS.photos_per_guest,
