@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useT } from '@/lib/i18n/use-t';
 
-import { FilmRecipeSettings } from '@/lib/film/types';
-import { FilmImage } from '@/lib/film/FilmImage';
+
 
 export interface GalleryPhoto {
   id: string;

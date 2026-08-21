@@ -4,22 +4,34 @@ import { revalidatePath } from 'next/cache';
 import { createServiceClient } from '@/lib/supabase/service';
 
 export interface SaveDisposableCameraConfigInput {
+  // Event Information
+  name: string;
+  host_name: string;
+  event_date: string;
+  // Camera Setup
   photos_per_guest: number;
   max_contributors: number;
   retention_months: number;
+  // Film Recipe
   film_recipe_id: string;
+  // Album & Cover
+  cover_image_url: string | null;
+  theme: string;
+  is_published: boolean;
+  auto_publish_at: string | null;
 }
 
 /**
- * Server action: persist Disposable Camera event-specific configuration.
+ * Server action: persist all Disposable Camera event configuration.
  *
  * Validates:
  *  1. Event exists (by event_id slug).
- *  2. Disposable Camera service is enabled for this event via event_services.
+ *  2. Disposable Camera service is the single assigned service for this event.
  *  3. Numeric values are valid integers meeting minimum requirements.
  *  4. The selected film_recipe_id references a real, active film_recipes row.
+ *  5. Event name and date are present.
  *
- * Updates ONLY the four camera-config columns on the events table.
+ * Updates ONLY the relevant columns on the events table.
  * Does NOT create new events, new event_services rows, or touch any other column.
  */
 export async function saveDisposableCameraConfigAction(
@@ -28,7 +40,18 @@ export async function saveDisposableCameraConfigAction(
 ): Promise<{ error?: string }> {
   const supabase = createServiceClient();
 
-  // ── 1. Validate numeric inputs ──────────────────────────────────────────────
+  // ── 1. Validate text inputs ─────────────────────────────────────────────────
+  const name = input.name?.trim();
+  if (!name) return { error: 'Event name is required.' };
+
+  const eventDate = input.event_date?.trim();
+  if (!eventDate || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) {
+    return { error: 'A valid event date is required (YYYY-MM-DD).' };
+  }
+
+  const hostName = input.host_name?.trim() || null;
+
+  // ── 2. Validate numeric inputs ──────────────────────────────────────────────
   const photosPerGuest = Math.trunc(Number(input.photos_per_guest));
   const maxContributors = Math.trunc(Number(input.max_contributors));
   const retentionMonths = Math.trunc(Number(input.retention_months));
@@ -46,7 +69,7 @@ export async function saveDisposableCameraConfigAction(
     return { error: 'A Film Recipe must be selected.' };
   }
 
-  // ── 2. Confirm event exists ─────────────────────────────────────────────────
+  // ── 3. Confirm event exists ─────────────────────────────────────────────────
   const { data: event, error: eventError } = await supabase
     .from('events')
     .select('id, event_id')
@@ -57,47 +80,61 @@ export async function saveDisposableCameraConfigAction(
     return { error: 'Event not found.' };
   }
 
-  // ── 3. Confirm Disposable Camera is enabled for this event ──────────────────
-  const { data: service } = await supabase
+  // ── 4. Confirm Disposable Camera is the single assigned service ─────────────
+  const { data: dcService } = await supabase
     .from('services')
     .select('id')
     .eq('slug', 'disposable-camera')
     .single();
 
-  if (!service) {
+  if (!dcService) {
     return { error: 'Disposable Camera service is not registered in the system.' };
   }
 
-  const { data: eventService } = await supabase
+  const { data: eventServices } = await supabase
     .from('event_services')
-    .select('id')
-    .eq('event_id', event.id)
-    .eq('service_id', service.id)
-    .single();
+    .select('id, service_id')
+    .eq('event_id', event.id);
 
-  if (!eventService) {
-    return { error: 'Disposable Camera is not enabled for this event.' };
+  if (!eventServices || eventServices.length === 0) {
+    return { error: 'No service is assigned to this event.' };
+  }
+  if (eventServices.length > 1) {
+    return { error: 'This event has multiple services — violates one-event-one-service architecture.' };
+  }
+  if (eventServices[0].service_id !== dcService.id) {
+    return { error: 'The assigned service is not Disposable Camera.' };
   }
 
-  // ── 4. Confirm the selected Film Recipe exists ──────────────────────────────
+  // ── 5. Confirm the selected Film Recipe exists and is active ────────────────
   const { data: recipe } = await supabase
     .from('film_recipes')
     .select('id')
     .eq('id', input.film_recipe_id)
+    .eq('active', true)
     .single();
 
   if (!recipe) {
-    return { error: 'The selected Film Recipe does not exist.' };
+    return { error: 'The selected Film Recipe does not exist or is no longer active.' };
   }
 
-  // ── 5. Update ONLY the camera config columns ────────────────────────────────
+  // ── 6. Update the event row ─────────────────────────────────────────────────
   const { error: updateError } = await supabase
     .from('events')
     .update({
+      name,
+      host_name: hostName,
+      event_date: eventDate,
       photos_per_guest: photosPerGuest,
       max_contributors: maxContributors,
       retention_months: retentionMonths,
       film_recipe_id: input.film_recipe_id,
+      cover_image_url: input.cover_image_url ?? null,
+      theme: input.theme || 'Sage',
+      is_published: input.is_published ?? false,
+      auto_publish_at: input.auto_publish_at
+        ? new Date(input.auto_publish_at).toISOString()
+        : null,
     })
     .eq('id', event.id);
 
@@ -105,51 +142,9 @@ export async function saveDisposableCameraConfigAction(
     return { error: updateError.message };
   }
 
-  // ── 6. Revalidate relevant routes ──────────────────────────────────────────
+  // ── 7. Revalidate relevant routes ───────────────────────────────────────────
   revalidatePath(`/admin/events/${eventId}`);
   revalidatePath(`/admin/events/${eventId}/services/disposable-camera`);
 
   return {};
 }
-
-export interface SaveDcAlbumConfigInput {
-  theme: string;
-  auto_publish_at: string | null;
-  cover_image_url: string | null;
-}
-
-export async function saveDcAlbumConfigAction(
-  eventId: string,
-  input: SaveDcAlbumConfigInput
-): Promise<{ error?: string }> {
-  const supabase = createServiceClient();
-
-  const { data: event, error: eventError } = await supabase
-    .from('events')
-    .select('id, event_id')
-    .eq('event_id', eventId)
-    .single();
-
-  if (eventError || !event) {
-    return { error: 'Event not found.' };
-  }
-
-  const { error: updateError } = await supabase
-    .from('events')
-    .update({
-      theme: input.theme,
-      auto_publish_at: input.auto_publish_at ? new Date(input.auto_publish_at).toISOString() : null,
-      cover_image_url: input.cover_image_url,
-    })
-    .eq('id', event.id);
-
-  if (updateError) {
-    return { error: updateError.message };
-  }
-
-  revalidatePath(`/admin/events/${eventId}`);
-  revalidatePath(`/admin/events/${eventId}/services/disposable-camera`);
-
-  return {};
-}
-

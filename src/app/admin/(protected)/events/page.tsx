@@ -16,7 +16,7 @@ interface Event {
   is_published: boolean;
   auto_publish_at: string | null;
   clients?: { name: string } | null;
-  event_services?: { count: number }[] | null;
+  event_services?: { services?: { name: string } }[] | null;
 }
 
 const STATE_STYLES: Record<EventState, string> = {
@@ -32,7 +32,7 @@ export default async function AdminEventsPage() {
 
   const { data: events, error } = await supabase
     .from('events')
-    .select('id, event_id, name, state, event_date, created_at, is_published, auto_publish_at, clients(name), event_services(count)')
+    .select('id, event_id, name, state, event_date, created_at, is_published, auto_publish_at, clients(name), event_services(services(name))')
     .order('created_at', { ascending: false });
 
   return (
@@ -82,7 +82,7 @@ export default async function AdminEventsPage() {
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">{t.adminEvents.colName}</th>
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">Client</th>
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">Date</th>
-                <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">Services</th>
+                <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">Service</th>
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide">{t.adminEvents.colState}</th>
                 <th className="px-5 py-3 font-semibold text-gray-600 tracking-wide text-right">{t.adminEvents.colActions}</th>
               </tr>

@@ -1,12 +1,17 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronRight, ChevronLeft, Film, Camera, Clock, Users, Image as ImageIcon, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  Check, ChevronRight, ChevronLeft,
+  Film, Camera, Clock, Users, Image as ImageIcon,
+  AlertCircle, CheckCircle2, CalendarDays, User, Type,
+} from 'lucide-react';
 import { saveDisposableCameraConfigAction } from './actions';
+import { uploadCoverImageAction } from '../../actions';
+import { useT } from '@/lib/i18n/use-t';
 
-// ── Constants (mirrors EditEventForm options) ─────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 const PHOTOS_OPTIONS = [5, 10, 20, 36];
 const CONTRIBUTOR_OPTIONS = [20, 50, 100, 9999];
 const RETENTION_OPTIONS = [
@@ -15,6 +20,7 @@ const RETENTION_OPTIONS = [
   { value: 6, label: '6 months' },
   { value: 12, label: '12 months' },
 ];
+const THEMES = ['Sage', 'Blush', 'Slate', 'Onyx', 'Mauve', 'Ivory'];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface FilmRecipe {
@@ -23,37 +29,47 @@ interface FilmRecipe {
   active: boolean;
 }
 
-interface DisposableCameraConfigWizardProps {
+export interface DisposableCameraConfigWizardProps {
   eventId: string;
-  eventName: string;
   initialValues: {
+    name: string;
+    host_name: string;
+    event_date: string;
     photos_per_guest: number;
     max_contributors: number;
     retention_months: number;
     film_recipe_id: string;
+    cover_image_url: string | null;
+    resolved_cover_url: string | null;
+    theme: string;
+    is_published: boolean;
+    auto_publish_at: string | null;
   };
   availableRecipes: FilmRecipe[];
 }
 
-// ── Step indicator ────────────────────────────────────────────────────────────
+// ── Step definitions ──────────────────────────────────────────────────────────
 const STEPS = [
-  { id: 1, label: 'Camera Setup', icon: Camera },
-  { id: 2, label: 'Film Recipe', icon: Film },
-  { id: 3, label: 'Review', icon: CheckCircle2 },
+  { id: 1, label: 'Event Info',    icon: CalendarDays },
+  { id: 2, label: 'Camera Setup',  icon: Camera },
+  { id: 3, label: 'Film Recipe',   icon: Film },
+  { id: 4, label: 'Album & Cover', icon: ImageIcon },
+  { id: 5, label: 'Review',        icon: CheckCircle2 },
 ];
 
+// ── Step Indicator ────────────────────────────────────────────────────────────
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <div className="flex items-center justify-center gap-0 mb-10">
+    <div className="flex items-center justify-center gap-0 mb-10 overflow-x-auto pb-1">
       {STEPS.map((step, idx) => {
         const Icon = step.icon;
         const isCompleted = currentStep > step.id;
         const isCurrent = currentStep === step.id;
         return (
-          <div key={step.id} className="flex items-center">
+          <div key={step.id} className="flex items-center flex-shrink-0">
             <div className="flex flex-col items-center">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+                className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
                   isCompleted
                     ? 'bg-gray-900 border-gray-900 text-white'
                     : isCurrent
@@ -68,7 +84,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                 )}
               </div>
               <span
-                className={`mt-1.5 text-[11px] font-medium whitespace-nowrap ${
+                className={`mt-1.5 text-[10px] font-medium whitespace-nowrap ${
                   isCurrent ? 'text-gray-900' : isCompleted ? 'text-gray-600' : 'text-gray-400'
                 }`}
               >
@@ -77,7 +93,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             </div>
             {idx < STEPS.length - 1 && (
               <div
-                className={`h-px w-16 mx-2 mb-5 transition-all duration-300 ${
+                className={`h-px w-8 sm:w-12 mx-1.5 mb-5 transition-all duration-300 ${
                   currentStep > step.id ? 'bg-gray-900' : 'bg-gray-200'
                 }`}
               />
@@ -89,27 +105,124 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
   );
 }
 
-// ── Step 1: Camera Setup ──────────────────────────────────────────────────────
-interface CameraSetupValues {
-  photos_per_guest: number;
-  max_contributors: number;
-  retention_months: number;
+// ── Input / field helpers ─────────────────────────────────────────────────────
+const inputClass =
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-100 transition-colors';
+
+function OptionButton({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`py-3 rounded-xl border-2 text-sm font-semibold transition-all duration-150 ${
+        selected
+          ? 'border-gray-900 bg-gray-900 text-white shadow-sm'
+          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
-function Step1CameraSetup({
-  values,
+// ── Step 1: Event Information ─────────────────────────────────────────────────
+function Step1EventInfo({
+  name,
+  hostName,
+  eventDate,
   onChange,
 }: {
-  values: CameraSetupValues;
-  onChange: (key: keyof CameraSetupValues, value: number) => void;
+  name: string;
+  hostName: string;
+  eventDate: string;
+  onChange: (key: 'name' | 'host_name' | 'event_date', value: string) => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">Event Information</h2>
+        <p className="text-sm text-gray-500 mt-1">Set the core details for this Disposable Camera event.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <span className="flex items-center gap-2">
+              <Type className="w-4 h-4 text-gray-400" />
+              Event Name
+            </span>
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => onChange('name', e.target.value)}
+            placeholder="e.g. David & Valerie Wedding"
+            className={inputClass}
+            autoFocus
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <span className="flex items-center gap-2">
+              <User className="w-4 h-4 text-gray-400" />
+              Host Name
+            </span>
+          </label>
+          <input
+            type="text"
+            value={hostName}
+            onChange={(e) => onChange('host_name', e.target.value)}
+            placeholder="e.g. David & Valerie"
+            className={inputClass}
+          />
+          <p className="mt-1.5 text-xs text-gray-400">Shown to guests and hosts as the event organiser.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <span className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-gray-400" />
+              Event Date
+            </span>
+          </label>
+          <input
+            type="date"
+            value={eventDate}
+            onChange={(e) => onChange('event_date', e.target.value)}
+            className={inputClass}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 2: Camera Setup ──────────────────────────────────────────────────────
+function Step2CameraSetup({
+  photosPerGuest,
+  maxContributors,
+  retentionMonths,
+  onChange,
+}: {
+  photosPerGuest: number;
+  maxContributors: number;
+  retentionMonths: number;
+  onChange: (key: 'photos_per_guest' | 'max_contributors' | 'retention_months', value: number) => void;
 }) {
   return (
     <div className="space-y-7">
       <div>
         <h2 className="text-lg font-bold text-gray-900">Camera Setup</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Configure the capture limits for this event.
-        </p>
+        <p className="text-sm text-gray-500 mt-1">Configure the capture limits for this event.</p>
       </div>
 
       <div className="space-y-5">
@@ -123,27 +236,15 @@ function Step1CameraSetup({
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {PHOTOS_OPTIONS.map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => onChange('photos_per_guest', n)}
-                className={`py-3 rounded-xl border-2 text-sm font-semibold transition-all duration-150 ${
-                  values.photos_per_guest === n
-                    ? 'border-gray-900 bg-gray-900 text-white shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                }`}
-              >
+              <OptionButton key={n} selected={photosPerGuest === n} onClick={() => onChange('photos_per_guest', n)}>
                 {n}
-              </button>
+              </OptionButton>
             ))}
           </div>
-          {/* Allow custom value not in the preset list */}
-          {!PHOTOS_OPTIONS.includes(values.photos_per_guest) && (
-            <p className="mt-2 text-xs text-gray-500">
-              Current value: <span className="font-semibold">{values.photos_per_guest}</span> (custom)
-            </p>
+          {!PHOTOS_OPTIONS.includes(photosPerGuest) && (
+            <p className="mt-2 text-xs text-gray-500">Current: <span className="font-semibold">{photosPerGuest}</span> (custom)</p>
           )}
-          <p className="mt-2 text-xs text-gray-400">Maximum number of photos each guest can upload.</p>
+          <p className="mt-2 text-xs text-gray-400">Maximum photos each guest can upload.</p>
         </div>
 
         {/* Max Contributors */}
@@ -156,26 +257,15 @@ function Step1CameraSetup({
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {CONTRIBUTOR_OPTIONS.map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => onChange('max_contributors', n)}
-                className={`py-3 rounded-xl border-2 text-sm font-semibold transition-all duration-150 ${
-                  values.max_contributors === n
-                    ? 'border-gray-900 bg-gray-900 text-white shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                }`}
-              >
+              <OptionButton key={n} selected={maxContributors === n} onClick={() => onChange('max_contributors', n)}>
                 {n === 9999 ? 'Unlimited' : n}
-              </button>
+              </OptionButton>
             ))}
           </div>
-          {!CONTRIBUTOR_OPTIONS.includes(values.max_contributors) && (
-            <p className="mt-2 text-xs text-gray-500">
-              Current value: <span className="font-semibold">{values.max_contributors}</span> (custom)
-            </p>
+          {!CONTRIBUTOR_OPTIONS.includes(maxContributors) && (
+            <p className="mt-2 text-xs text-gray-500">Current: <span className="font-semibold">{maxContributors}</span> (custom)</p>
           )}
-          <p className="mt-2 text-xs text-gray-400">Maximum number of guests who can contribute photos.</p>
+          <p className="mt-2 text-xs text-gray-400">Maximum guests who can contribute photos.</p>
         </div>
 
         {/* Retention Period */}
@@ -188,24 +278,13 @@ function Step1CameraSetup({
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {RETENTION_OPTIONS.map(({ value, label }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onChange('retention_months', value)}
-                className={`py-3 rounded-xl border-2 text-sm font-semibold transition-all duration-150 ${
-                  values.retention_months === value
-                    ? 'border-gray-900 bg-gray-900 text-white shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                }`}
-              >
+              <OptionButton key={value} selected={retentionMonths === value} onClick={() => onChange('retention_months', value)}>
                 {label}
-              </button>
+              </OptionButton>
             ))}
           </div>
-          {!RETENTION_OPTIONS.find((r) => r.value === values.retention_months) && (
-            <p className="mt-2 text-xs text-gray-500">
-              Current value: <span className="font-semibold">{values.retention_months} month{values.retention_months !== 1 ? 's' : ''}</span> (custom)
-            </p>
+          {!RETENTION_OPTIONS.find((r) => r.value === retentionMonths) && (
+            <p className="mt-2 text-xs text-gray-500">Current: <span className="font-semibold">{retentionMonths} month{retentionMonths !== 1 ? 's' : ''}</span> (custom)</p>
           )}
           <p className="mt-2 text-xs text-gray-400">How long photos are retained after the event ends.</p>
         </div>
@@ -214,8 +293,8 @@ function Step1CameraSetup({
   );
 }
 
-// ── Step 2: Film Recipe ───────────────────────────────────────────────────────
-function Step2FilmRecipe({
+// ── Step 3: Film Recipe ───────────────────────────────────────────────────────
+function Step3FilmRecipe({
   recipes,
   selectedId,
   onSelect,
@@ -224,30 +303,19 @@ function Step2FilmRecipe({
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
-  const activeRecipes = recipes.filter((r) => r.active);
-
-  if (activeRecipes.length === 0) {
+  if (recipes.length === 0) {
     return (
       <div className="space-y-7">
         <div>
           <h2 className="text-lg font-bold text-gray-900">Film Recipe</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Choose the film style for this event&apos;s disposable camera experience.
-          </p>
+          <p className="text-sm text-gray-500 mt-1">Choose the film style for this event.</p>
         </div>
         <div className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-12 text-center">
           <Film className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <h3 className="text-sm font-semibold text-gray-700 mb-1">No Film Recipes Available</h3>
-          <p className="text-sm text-gray-500 mb-5 max-w-sm mx-auto">
-            No active film recipes are available. Create at least one recipe before configuring an event.
+          <p className="text-sm text-gray-500 max-w-sm mx-auto">
+            No active film recipes exist. Create at least one recipe before configuring an event.
           </p>
-          <Link
-            href="/admin/services/disposable-camera/film-recipes"
-            className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-          >
-            <Film className="w-4 h-4" />
-            Manage Film Recipes
-          </Link>
         </div>
       </div>
     );
@@ -257,13 +325,11 @@ function Step2FilmRecipe({
     <div className="space-y-7">
       <div>
         <h2 className="text-lg font-bold text-gray-900">Film Recipe</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Choose the film style for this event. Exactly one recipe must be selected.
-        </p>
+        <p className="text-sm text-gray-500 mt-1">Choose the film style for this event. Exactly one recipe must be selected.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {activeRecipes.map((recipe) => {
+        {recipes.map((recipe) => {
           const isSelected = selectedId === recipe.id;
           return (
             <button
@@ -276,34 +342,19 @@ function Step2FilmRecipe({
                   : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              {/* Film icon */}
               <div
                 className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
                   isSelected ? 'bg-gray-900' : 'bg-gray-100 group-hover:bg-gray-200'
                 }`}
               >
-                <Film
-                  className={`w-5 h-5 transition-colors ${
-                    isSelected ? 'text-white' : 'text-gray-500'
-                  }`}
-                />
+                <Film className={`w-5 h-5 transition-colors ${isSelected ? 'text-white' : 'text-gray-500'}`} />
               </div>
-
-              {/* Name */}
               <div className="flex-1 min-w-0">
-                <p
-                  className={`text-sm font-semibold truncate transition-colors ${
-                    isSelected ? 'text-gray-900' : 'text-gray-700'
-                  }`}
-                >
+                <p className={`text-sm font-semibold truncate transition-colors ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
                   {recipe.name}
                 </p>
-                <p className="text-xs text-gray-400 font-mono mt-0.5 truncate">
-                  {recipe.id.split('-')[0]}
-                </p>
+                <p className="text-xs text-gray-400 font-mono mt-0.5 truncate">{recipe.id.split('-')[0]}</p>
               </div>
-
-              {/* Checkmark */}
               {isSelected && (
                 <div className="w-5 h-5 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
                   <Check className="w-3 h-3 text-white" />
@@ -313,80 +364,242 @@ function Step2FilmRecipe({
           );
         })}
       </div>
-
-      <p className="text-xs text-gray-400">
-        To manage or create film recipes, visit{' '}
-        <Link
-          href="/admin/services/disposable-camera/film-recipes"
-          className="text-gray-600 underline underline-offset-2 hover:text-gray-900 transition-colors"
-        >
-          Film Recipes
-        </Link>
-        .
-      </p>
     </div>
   );
 }
 
-// ── Step 3: Review ────────────────────────────────────────────────────────────
-function Step3Review({
-  values,
-  recipes,
+// ── Step 4: Album & Cover ─────────────────────────────────────────────────────
+function Step4AlbumCover({
+  coverPreview,
+  theme,
+  isPublished,
+  autoPublishAt,
+  onCoverChange,
+  onCoverRemove,
+  onThemeChange,
+  onPublishedChange,
+  onAutoPublishChange,
+  t,
 }: {
-  values: CameraSetupValues & { film_recipe_id: string };
-  recipes: FilmRecipe[];
+  coverPreview: string | null;
+  theme: string;
+  isPublished: boolean;
+  autoPublishAt: string;
+  onCoverChange: (file: File, preview: string) => void;
+  onCoverRemove: () => void;
+  onThemeChange: (theme: string) => void;
+  onPublishedChange: (v: boolean) => void;
+  onAutoPublishChange: (v: string) => void;
+  t: ReturnType<typeof useT>['t'];
 }) {
-  const selectedRecipe = recipes.find((r) => r.id === values.film_recipe_id);
-  const retentionLabel =
-    RETENTION_OPTIONS.find((r) => r.value === values.retention_months)?.label ??
-    `${values.retention_months} month${values.retention_months !== 1 ? 's' : ''}`;
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      onCoverChange(file, URL.createObjectURL(file));
+    }
+  }
 
-  const rows = [
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">Album & Cover Configuration</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Configure the visual cover and publishing settings for the Disposable Camera experience.
+        </p>
+      </div>
+
+      {/* Cover Image */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.adminEditEvent.coverImage}</label>
+        {coverPreview ? (
+          <div className="relative h-44 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverPreview} alt="Cover preview" className="h-full w-full object-cover" />
+            <div className="absolute right-2 top-2 flex gap-2">
+              <label className="cursor-pointer rounded-md bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm backdrop-blur-sm transition hover:bg-white">
+                {t.adminEditEvent.replace}
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+              </label>
+              <button
+                type="button"
+                onClick={onCoverRemove}
+                className="rounded-md bg-red-500/90 px-3 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur-sm transition hover:bg-red-600"
+              >
+                {t.adminEditEvent.remove}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 transition hover:border-gray-400 hover:bg-gray-100">
+            <ImageIcon className="w-6 h-6 text-gray-400 mb-2" />
+            <span className="text-sm font-medium text-gray-600">{t.adminEditEvent.uploadCover}</span>
+            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          </label>
+        )}
+        <p className="mt-1.5 text-xs text-gray-400">
+          Used as the hero/cover image for the guest experience, host view, and public album.
+        </p>
+      </div>
+
+      {/* Theme */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.adminEditEvent.theme}</label>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          {THEMES.map((th) => (
+            <button
+              key={th}
+              type="button"
+              onClick={() => onThemeChange(th)}
+              className={`py-2.5 rounded-xl border-2 text-xs font-semibold transition-all ${
+                theme === th
+                  ? 'border-gray-900 bg-gray-900 text-white'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {th}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Publish Status */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Album Visibility</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onPublishedChange(true)}
+            className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+              isPublished
+                ? 'border-gray-900 bg-gray-900 text-white'
+                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Published
+          </button>
+          <button
+            type="button"
+            onClick={() => onPublishedChange(false)}
+            className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+              !isPublished
+                ? 'border-gray-900 bg-gray-900 text-white'
+                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Unpublished
+          </button>
+        </div>
+      </div>
+
+      {/* Auto Publish */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.adminEditEvent.autoPublishAt}</label>
+        <input
+          type="datetime-local"
+          value={autoPublishAt}
+          onChange={(e) => onAutoPublishChange(e.target.value)}
+          className={inputClass}
+        />
+        <p className="mt-1.5 text-xs text-gray-400">If set, the album will automatically publish at this time.</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 5: Review ────────────────────────────────────────────────────────────
+function Step5Review({
+  name,
+  hostName,
+  eventDate,
+  photosPerGuest,
+  maxContributors,
+  retentionMonths,
+  filmRecipeId,
+  recipes,
+  coverPreview,
+  theme,
+  isPublished,
+  autoPublishAt,
+}: {
+  name: string;
+  hostName: string;
+  eventDate: string;
+  photosPerGuest: number;
+  maxContributors: number;
+  retentionMonths: number;
+  filmRecipeId: string;
+  recipes: FilmRecipe[];
+  coverPreview: string | null;
+  theme: string;
+  isPublished: boolean;
+  autoPublishAt: string;
+}) {
+  const selectedRecipe = recipes.find((r) => r.id === filmRecipeId);
+  const retentionLabel =
+    RETENTION_OPTIONS.find((r) => r.value === retentionMonths)?.label ??
+    `${retentionMonths} month${retentionMonths !== 1 ? 's' : ''}`;
+
+  const sections = [
     {
-      section: 'Camera Setup',
-      icon: Camera,
-      items: [
-        { label: 'Photos per Guest', value: `${values.photos_per_guest} photo${values.photos_per_guest !== 1 ? 's' : ''}` },
-        { label: 'Maximum Contributors', value: values.max_contributors === 9999 ? 'Unlimited' : `${values.max_contributors} guests` },
-        { label: 'Retention Period', value: retentionLabel },
+      title: 'Event Information',
+      icon: CalendarDays,
+      rows: [
+        { label: 'Event Name', value: name || '—' },
+        { label: 'Host Name', value: hostName || '—' },
+        { label: 'Event Date', value: eventDate || '—' },
       ],
     },
     {
-      section: 'Film Recipe',
+      title: 'Camera Setup',
+      icon: Camera,
+      rows: [
+        { label: 'Photos per Guest', value: `${photosPerGuest}` },
+        { label: 'Max Contributors', value: maxContributors === 9999 ? 'Unlimited' : `${maxContributors}` },
+        { label: 'Retention', value: retentionLabel },
+      ],
+    },
+    {
+      title: 'Film Recipe',
       icon: Film,
-      items: [
+      rows: [
         { label: 'Selected Recipe', value: selectedRecipe?.name ?? '—' },
+      ],
+    },
+    {
+      title: 'Album & Cover',
+      icon: ImageIcon,
+      rows: [
+        { label: 'Cover', value: coverPreview ? 'Image set' : 'No cover' },
+        { label: 'Theme', value: theme },
+        { label: 'Published', value: isPublished ? 'Yes' : 'No' },
+        { label: 'Auto Publish', value: autoPublishAt || '—' },
       ],
     },
   ];
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-bold text-gray-900">Review Configuration</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Confirm the settings below before saving.
-        </p>
+        <h2 className="text-lg font-bold text-gray-900">Review & Save</h2>
+        <p className="text-sm text-gray-500 mt-1">Confirm all settings before saving.</p>
       </div>
 
-      <div className="space-y-4">
-        {rows.map(({ section, icon: Icon, items }) => (
-          <div key={section} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-            <div className="flex items-center gap-2.5 px-5 py-3 bg-gray-50 border-b border-gray-100">
-              <Icon className="w-4 h-4 text-gray-400" />
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{section}</h3>
-            </div>
-            <dl className="divide-y divide-gray-100">
-              {items.map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between px-5 py-3.5">
-                  <dt className="text-sm text-gray-500">{label}</dt>
-                  <dd className="text-sm font-semibold text-gray-900">{value}</dd>
-                </div>
-              ))}
-            </dl>
+      {sections.map(({ title, icon: Icon, rows }) => (
+        <div key={title} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="flex items-center gap-2.5 px-5 py-3 bg-gray-50 border-b border-gray-100">
+            <Icon className="w-4 h-4 text-gray-400" />
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
           </div>
-        ))}
-      </div>
+          <dl className="divide-y divide-gray-100">
+            {rows.map(({ label, value }) => (
+              <div key={label} className="flex items-center justify-between px-5 py-3.5">
+                <dt className="text-sm text-gray-500">{label}</dt>
+                <dd className="text-sm font-semibold text-gray-900 max-w-[60%] text-right truncate">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
     </div>
   );
 }
@@ -394,40 +607,78 @@ function Step3Review({
 // ── Main Wizard ───────────────────────────────────────────────────────────────
 export function DisposableCameraConfigWizard({
   eventId,
-  eventName,
   initialValues,
   availableRecipes,
 }: DisposableCameraConfigWizardProps) {
   const router = useRouter();
+  const { t } = useT();
   const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const [cameraValues, setCameraValues] = useState<CameraSetupValues>({
-    photos_per_guest: initialValues.photos_per_guest,
-    max_contributors: initialValues.max_contributors,
-    retention_months: initialValues.retention_months,
-  });
+  // ── State ─────────────────────────────────────────────────────────────────
+  const [name, setName] = useState(initialValues.name);
+  const [hostName, setHostName] = useState(initialValues.host_name);
+  const [eventDate, setEventDate] = useState(initialValues.event_date);
 
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string>(
-    initialValues.film_recipe_id ?? ''
+  const [photosPerGuest, setPhotosPerGuest] = useState(initialValues.photos_per_guest);
+  const [maxContributors, setMaxContributors] = useState(initialValues.max_contributors);
+  const [retentionMonths, setRetentionMonths] = useState(initialValues.retention_months);
+
+  const [selectedRecipeId, setSelectedRecipeId] = useState(initialValues.film_recipe_id ?? '');
+
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(initialValues.resolved_cover_url ?? null);
+  const [rawCoverUrl, setRawCoverUrl] = useState<string | null>(initialValues.cover_image_url ?? null);
+  const [theme, setTheme] = useState(initialValues.theme || 'Sage');
+  const [isPublished, setIsPublished] = useState(initialValues.is_published ?? false);
+  const [autoPublishAt, setAutoPublishAt] = useState(
+    initialValues.auto_publish_at
+      ? new Date(initialValues.auto_publish_at).toISOString().slice(0, 16)
+      : ''
   );
 
-  const activeRecipes = availableRecipes.filter((r) => r.active);
-  const canProceedFromStep2 = selectedRecipeId.trim().length > 0;
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  function handleEventInfoChange(key: 'name' | 'host_name' | 'event_date', value: string) {
+    if (key === 'name') setName(value);
+    else if (key === 'host_name') setHostName(value);
+    else setEventDate(value);
+    setError(null);
+  }
 
-  function handleCameraChange(key: keyof CameraSetupValues, value: number) {
-    setCameraValues((v) => ({ ...v, [key]: value }));
+  function handleCameraChange(key: 'photos_per_guest' | 'max_contributors' | 'retention_months', value: number) {
+    if (key === 'photos_per_guest') setPhotosPerGuest(value);
+    else if (key === 'max_contributors') setMaxContributors(value);
+    else setRetentionMonths(value);
+    setError(null);
+  }
+
+  function handleCoverChange(file: File, preview: string) {
+    setCoverFile(file);
+    setCoverPreview(preview);
+    setError(null);
+  }
+
+  function handleCoverRemove() {
+    setCoverFile(null);
+    setCoverPreview(null);
+    setRawCoverUrl(null);
+    setError(null);
+  }
+
+  // ── Step validation ───────────────────────────────────────────────────────
+  function validateStep(s: number): string | null {
+    if (s === 1 && !name.trim()) return 'Event name is required.';
+    if (s === 3 && !selectedRecipeId) return 'Please select a Film Recipe before continuing.';
+    return null;
   }
 
   function handleContinue() {
+    const err = validateStep(step);
+    if (err) { setError(err); return; }
     setError(null);
-    if (step === 2 && !canProceedFromStep2) {
-      setError('Please select a Film Recipe before continuing.');
-      return;
-    }
-    setStep((s) => Math.min(s + 1, 3));
+    setStep((s) => Math.min(s + 1, 5));
   }
 
   function handleBack() {
@@ -435,25 +686,53 @@ export function DisposableCameraConfigWizard({
     setStep((s) => Math.max(s - 1, 1));
   }
 
+  // ── Save ──────────────────────────────────────────────────────────────────
   function handleSave() {
     setError(null);
     startTransition(async () => {
+      // Upload cover image if a new file was selected
+      let finalCoverUrl = rawCoverUrl;
+      if (coverFile) {
+        const fd = new FormData();
+        fd.append('cover_image', coverFile);
+        const uploadRes = await uploadCoverImageAction(eventId, fd);
+        if (uploadRes.error) {
+          setError(uploadRes.error);
+          return;
+        }
+        if (uploadRes.url) finalCoverUrl = uploadRes.url;
+      } else if (coverPreview === null) {
+        finalCoverUrl = null;
+      }
+
       const result = await saveDisposableCameraConfigAction(eventId, {
-        ...cameraValues,
+        name: name.trim(),
+        host_name: hostName.trim(),
+        event_date: eventDate,
+        photos_per_guest: photosPerGuest,
+        max_contributors: maxContributors,
+        retention_months: retentionMonths,
         film_recipe_id: selectedRecipeId,
+        cover_image_url: finalCoverUrl,
+        theme,
+        is_published: isPublished,
+        auto_publish_at: autoPublishAt || null,
       });
+
       if (result.error) {
         setError(result.error);
         return;
       }
+
       setSaved(true);
-      // Redirect back to event detail after a short pause
       setTimeout(() => {
-        router.push(`/admin/events/${eventId}`);
-      }, 1800);
+        router.push(`/admin/events/${eventId}/services/disposable-camera?tab=configuration`);
+        router.refresh();
+      }, 1500);
     });
   }
 
+  // ── Success state ─────────────────────────────────────────────────────────
   if (saved) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center px-6">
@@ -461,39 +740,76 @@ export function DisposableCameraConfigWizard({
           <CheckCircle2 className="w-7 h-7 text-green-600" />
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Configuration Saved</h3>
-        <p className="text-sm text-gray-500">
-          The Disposable Camera settings for <strong>{eventName}</strong> have been updated.
-        </p>
-        <p className="text-xs text-gray-400 mt-3">Returning to event details…</p>
+        <p className="text-sm text-gray-500">The Disposable Camera settings have been updated.</p>
+        <p className="text-xs text-gray-400 mt-3">Refreshing…</p>
       </div>
     );
   }
+
+  const isOnFilmStep = step === 3;
+  const canProceed = isOnFilmStep ? selectedRecipeId.trim().length > 0 : true;
 
   return (
     <div>
       <StepIndicator currentStep={step} />
 
-      {/* Step content */}
       <div className="min-h-[340px]">
         {step === 1 && (
-          <Step1CameraSetup values={cameraValues} onChange={handleCameraChange} />
+          <Step1EventInfo
+            name={name}
+            hostName={hostName}
+            eventDate={eventDate}
+            onChange={handleEventInfoChange}
+          />
         )}
         {step === 2 && (
-          <Step2FilmRecipe
+          <Step2CameraSetup
+            photosPerGuest={photosPerGuest}
+            maxContributors={maxContributors}
+            retentionMonths={retentionMonths}
+            onChange={handleCameraChange}
+          />
+        )}
+        {step === 3 && (
+          <Step3FilmRecipe
             recipes={availableRecipes}
             selectedId={selectedRecipeId}
             onSelect={setSelectedRecipeId}
           />
         )}
-        {step === 3 && (
-          <Step3Review
-            values={{ ...cameraValues, film_recipe_id: selectedRecipeId }}
+        {step === 4 && (
+          <Step4AlbumCover
+            coverPreview={coverPreview}
+            theme={theme}
+            isPublished={isPublished}
+            autoPublishAt={autoPublishAt}
+            onCoverChange={handleCoverChange}
+            onCoverRemove={handleCoverRemove}
+            onThemeChange={setTheme}
+            onPublishedChange={setIsPublished}
+            onAutoPublishChange={setAutoPublishAt}
+            t={t}
+          />
+        )}
+        {step === 5 && (
+          <Step5Review
+            name={name}
+            hostName={hostName}
+            eventDate={eventDate}
+            photosPerGuest={photosPerGuest}
+            maxContributors={maxContributors}
+            retentionMonths={retentionMonths}
+            filmRecipeId={selectedRecipeId}
             recipes={availableRecipes}
+            coverPreview={coverPreview}
+            theme={theme}
+            isPublished={isPublished}
+            autoPublishAt={autoPublishAt}
           />
         )}
       </div>
 
-      {/* Error message */}
+      {/* Error */}
       {error && (
         <div className="mt-6 flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -513,11 +829,11 @@ export function DisposableCameraConfigWizard({
           Back
         </button>
 
-        {step < 3 ? (
+        {step < 5 ? (
           <button
             type="button"
             onClick={handleContinue}
-            disabled={step === 2 && activeRecipes.length === 0}
+            disabled={isOnFilmStep && !canProceed}
             className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Continue

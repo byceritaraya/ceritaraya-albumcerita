@@ -84,8 +84,8 @@ export default async function ClientDetailPage({
                 <div className="flex flex-col gap-4">
                   {events.map((event) => {
                     const servicesText = event.event_services && event.event_services.length > 0 
-                      ? event.event_services.map((s) => (s as { services?: { name?: string } }).services?.name).filter(Boolean).join(' • ') 
-                      : '0 Services';
+                      ? (event.event_services[0] as { services?: { name?: string } }).services?.name || 'Unknown Service'
+                      : 'No Service';
                     return (
                       <div key={event.id} className="p-5 rounded-xl border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors flex items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -99,7 +99,7 @@ export default async function ClientDetailPage({
                             </span>
                           </div>
                           <div className="mt-3">
-                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Services</span>
+                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Service</span>
                             <p className="text-sm text-gray-700 mt-0.5 truncate">{servicesText}</p>
                           </div>
                         </div>

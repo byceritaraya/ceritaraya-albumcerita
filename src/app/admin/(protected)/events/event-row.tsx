@@ -16,7 +16,7 @@ interface EventRowProps {
     event_date: string | null;
     created_at: string;
     clients?: { name: string } | null;
-    event_services?: { count: number }[] | null;
+    event_services?: { services?: { name: string } }[] | null;
   };
   stateStyles: Record<EventState, string>;
 }
@@ -48,6 +48,9 @@ export function EventRow({ event, stateStyles }: EventRowProps) {
     }
   }
 
+  const hasMultipleServices = event.event_services && event.event_services.length > 1;
+  const serviceName = event.event_services?.[0]?.services?.name || 'No Service';
+
   return (
     <>
       <tr className="hover:bg-gray-50 transition-colors duration-100 group">
@@ -67,9 +70,15 @@ export function EventRow({ event, stateStyles }: EventRowProps) {
           {event.event_date ? formatDate(event.event_date) : '—'}
         </td>
         <td className="px-5 py-4">
-          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600">
-            {event.event_services?.[0]?.count || 0}
-          </span>
+          {hasMultipleServices ? (
+            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+              Legacy: Multiple Services
+            </span>
+          ) : (
+            <span className="text-sm font-medium text-gray-700">
+              {serviceName}
+            </span>
+          )}
         </td>
         <td className="px-5 py-4">
           <span

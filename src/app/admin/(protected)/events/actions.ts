@@ -12,11 +12,11 @@ export type CreateEventState = {
   error?: string;
 };
 
-const VALID_EVENT_TYPES = ['wedding', 'birthday', 'corporate', 'other'] as const;
 const DEFAULTS = {
   photos_per_guest: 10,
   max_contributors: 50,
   retention_months: 3,
+  event_type: 'other',
 } as const;
 
 export async function deleteEventAction(eventId: string) {
@@ -43,31 +43,25 @@ export async function createEventAction(
   formData: FormData
 ): Promise<CreateEventState> {
   const clientId = (formData.get('client_id') as string)?.trim();
-  const name = (formData.get('name') as string)?.trim();
-  const eventDate = (formData.get('event_date') as string)?.trim();
-  const eventType = (formData.get('event_type') as string)?.trim();
   const serviceIdsRaw = formData.get('service_ids') as string;
 
+  // ── 1. Validate client ──────────────────────────────────────────────────────
   if (!clientId) return { error: 'Client is required.' };
-  if (!name) return { error: 'Event name is required.' };
-  if (!eventDate) return { error: 'Event date is required.' };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return { error: 'Invalid date format.' };
-  if (!VALID_EVENT_TYPES.includes(eventType as typeof VALID_EVENT_TYPES[number])) {
-    return { error: 'Invalid event type.' };
-  }
 
+  // ── 2. Validate service selection ──────────────────────────────────────────
   let serviceIds: string[] = [];
   try {
     serviceIds = JSON.parse(serviceIdsRaw || '[]');
   } catch {
     return { error: 'Invalid service selection.' };
   }
-  if (!Array.isArray(serviceIds) || serviceIds.length === 0) {
-    return { error: 'At least one service must be selected.' };
+  if (!Array.isArray(serviceIds) || serviceIds.length !== 1) {
+    return { error: 'Exactly one service must be selected.' };
   }
 
   const supabase = createServiceClient();
 
+  // ── 3. Verify client exists and is active ───────────────────────────────────
   const { data: client, error: clientError } = await supabase
     .from('clients')
     .select('id, name, status')
@@ -81,9 +75,10 @@ export async function createEventAction(
     return { error: 'Cannot create an event for an inactive client. Reactivate the client first.' };
   }
 
+  // ── 4. Verify service exists, is active, and get its slug ──────────────────
   const { data: services, error: servicesError } = await supabase
     .from('services')
-    .select('id')
+    .select('id, slug')
     .in('id', serviceIds)
     .eq('active', true);
 
@@ -91,6 +86,12 @@ export async function createEventAction(
     return { error: 'One or more selected services are invalid or inactive.' };
   }
 
+  const selectedService = services[0];
+  const serviceSlug = selectedService.slug;
+
+  // ── 5. Pick a default film recipe ──────────────────────────────────────────
+  // We assign a default recipe so the event row is valid from creation.
+  // The admin will select the actual recipe in the Configuration wizard.
   const { data: defaultRecipe } = await supabase
     .from('film_recipes')
     .select('id')
@@ -106,8 +107,14 @@ export async function createEventAction(
     return { error: 'No active film recipe found. Please configure a film recipe first.' };
   }
 
+  // ── 6. Generate IDs, slugs, PINs ───────────────────────────────────────────
+  // The event name is left as a placeholder; the admin sets the real name
+  // in the Disposable Camera Configuration wizard after creation.
+  const placeholderName = 'Untitled Event';
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
   const eventId = generateEventId();
-  const baseSlug = generateSlug(name, eventDate);
+  const baseSlug = generateSlug(placeholderName, today);
   const slug = await resolveSlug(baseSlug, supabase);
   const expiresAt = getExpiresAt(DEFAULTS.retention_months);
 
@@ -118,14 +125,15 @@ export async function createEventAction(
   const guestPin = generatePin();
   const guestPinHash = hashPin(guestPin);
 
+  // ── 7. Create the event ────────────────────────────────────────────────────
   const { data: createdEventId, error: rpcError } = await supabase.rpc(
     'create_event_with_services',
     {
       p_event_id: eventId,
       p_slug: slug,
-      p_name: name,
-      p_event_type: eventType,
-      p_event_date: eventDate,
+      p_name: placeholderName,
+      p_event_type: DEFAULTS.event_type,
+      p_event_date: today,
       p_client_id: clientId,
       p_pin_hash: pinHash,
       p_host_pin_hash: hostPinHash,
@@ -149,6 +157,7 @@ export async function createEventAction(
     };
   }
 
+  // ── 8. Set PIN flash cookie ─────────────────────────────────────────────────
   const cookieStore = await cookies();
   cookieStore.set(
     PIN_FLASH_COOKIE,
@@ -161,5 +170,6 @@ export async function createEventAction(
     }
   );
 
-  redirect(`/admin/events/${createdEventId}`);
+  // ── 9. Redirect directly into the service workspace ────────────────────────
+  redirect(`/admin/events/${createdEventId}/services/${serviceSlug}`);
 }

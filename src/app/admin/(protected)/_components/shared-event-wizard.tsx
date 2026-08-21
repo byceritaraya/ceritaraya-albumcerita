@@ -84,32 +84,10 @@ function ServiceIcon({ slug }: { slug: string }) {
   return <div className="w-5 h-5 rounded bg-gray-200" />;
 }
 
-// ── Input / field styles ──────────────────────────────────────────────────────
-
-const inputClass =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-100 transition-colors';
+// ── Select class ──────────────────────────────────────────────────────────────
 
 const selectClass =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-100 transition-colors';
-
-function Field({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium text-gray-700">
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
 
 // ── Submit button ─────────────────────────────────────────────────────────────
 
@@ -144,80 +122,54 @@ const initialState: CreateEventState = {};
 
 export function SharedEventWizard({ mode, clients = [], initialClient, services }: SharedEventWizardProps) {
   const [step, setStep] = useState(1);
-  const steps = mode === 'global' ? ['Client', 'Event', 'Services', 'Review'] : ['Event', 'Services', 'Review'];
+  // Global: [Client, Service, Create] — steps 1, 2, 3
+  // Client: [Service, Create]         — steps 1, 2
+  const steps: string[] = mode === 'global'
+    ? ['Client', 'Service', 'Create']
+    : ['Service', 'Create'];
 
   // Global mode state
   const [selectedClientId, setSelectedClientId] = useState(initialClient?.id || '');
 
-  // Event info state
-  const [eventName, setEventName] = useState('');
-  const [eventDate, setEventDate] = useState('');
-  const [eventType, setEventType] = useState('wedding');
-
-  // Services state
+  // Service state
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [serviceError, setServiceError] = useState('');
 
   // Server action
   const [state, formAction] = useActionState(createEventAction, initialState);
 
-  // Derived client
-  const activeClient = mode === 'global' 
+  // Derived
+  const activeClient = mode === 'global'
     ? clients.find(c => c.id === selectedClientId)
     : initialClient;
+  const selectedServices = services.filter(s => selectedServiceIds.includes(s.id));
 
-  // ── Step Transitions ──────────────────────────────────────────────────────
-  
-  function handleClientSelectContinue(e: React.FormEvent) {
+  // ── Step indices ───────────────────────────────────────────────────────────
+  const clientStepIndex  = mode === 'global' ? 1 : -1;  // only in global
+  const serviceStepIndex = mode === 'global' ? 2 : 1;
+  const reviewStepIndex  = mode === 'global' ? 3 : 2;
+
+  // ── Transitions ───────────────────────────────────────────────────────────
+
+  function handleClientContinue(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedClientId) return;
-    setStep(2);
+    setStep(serviceStepIndex);
   }
 
-  function handleEventInfoContinue(e: React.FormEvent) {
-    e.preventDefault();
-    if (!eventName.trim() || !eventDate) return;
-    setStep(mode === 'global' ? 3 : 2);
-  }
-
-  function handleServicesContinue() {
-    if (selectedServiceIds.length === 0) {
-      setServiceError('Please select at least one service.');
+  function handleServiceContinue() {
+    if (selectedServiceIds.length !== 1) {
+      setServiceError('Please select exactly one service.');
       return;
     }
-    setStep(mode === 'global' ? 4 : 3);
+    setServiceError('');
+    setStep(reviewStepIndex);
   }
 
   function toggleService(id: string) {
     setServiceError('');
-    setSelectedServiceIds((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
+    setSelectedServiceIds([id]);
   }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  
-  const selectedServices = services.filter((s) => selectedServiceIds.includes(s.id));
-
-  function formatDate(iso: string) {
-    if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
-  }
-
-  const eventTypeLabel: Record<string, string> = {
-    wedding: 'Wedding',
-    birthday: 'Birthday',
-    corporate: 'Corporate',
-    other: 'Other',
-  };
-
-  // Step indices mapping
-  const clientStepIndex = mode === 'global' ? 1 : -1;
-  const eventStepIndex = mode === 'global' ? 2 : 1;
-  const servicesStepIndex = mode === 'global' ? 3 : 2;
-  const reviewStepIndex = mode === 'global' ? 4 : 3;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -225,16 +177,17 @@ export function SharedEventWizard({ mode, clients = [], initialClient, services 
     <div className="max-w-lg mx-auto w-full">
       <StepIndicator current={step} steps={steps} />
 
-      {/* ── STEP: CLIENT SELECTION (GLOBAL MODE ONLY) ──────────────────────────────── */}
+      {/* ── STEP: CLIENT SELECTION (GLOBAL MODE ONLY) ──────────────────── */}
       {mode === 'global' && step === clientStepIndex && (
         <div>
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Select Client</h2>
             <p className="text-sm text-gray-500 mt-1">Choose the client that this event belongs to.</p>
           </div>
-          
-          <form onSubmit={handleClientSelectContinue} className="flex flex-col gap-5">
-            <Field label="Client" htmlFor="client_id">
+
+          <form onSubmit={handleClientContinue} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="client_id" className="text-sm font-medium text-gray-700">Client</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Building className="h-5 w-5 text-gray-400" />
@@ -254,7 +207,7 @@ export function SharedEventWizard({ mode, clients = [], initialClient, services 
                   ))}
                 </select>
               </div>
-            </Field>
+            </div>
 
             <div className="pt-2 flex gap-3">
               <button
@@ -275,17 +228,17 @@ export function SharedEventWizard({ mode, clients = [], initialClient, services 
         </div>
       )}
 
-      {/* ── STEP: EVENT INFORMATION ──────────────────────────────── */}
-      {step === eventStepIndex && (
+      {/* ── STEP: SERVICE SELECTION ───────────────────────────────────────── */}
+      {step === serviceStepIndex && (
         <div>
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Event Information</h2>
-            <p className="text-sm text-gray-500 mt-1">Enter the core details for this event.</p>
+            <h2 className="text-lg font-semibold text-gray-900">Choose a service</h2>
+            <p className="text-sm text-gray-500 mt-1">Select the experience for this event.</p>
           </div>
 
-          {/* Client context */}
+          {/* Client context pill */}
           {activeClient && (
-            <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-50 border border-gray-200">
+            <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-50 border border-gray-200">
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Creating Event For</p>
                 <p className="text-sm font-semibold text-gray-900 truncate">{activeClient.name}</p>
@@ -293,76 +246,6 @@ export function SharedEventWizard({ mode, clients = [], initialClient, services 
               </div>
             </div>
           )}
-
-          <form onSubmit={handleEventInfoContinue} className="flex flex-col gap-5">
-            <Field label="Event Name" htmlFor="name">
-              <input
-                id="name"
-                type="text"
-                required
-                value={eventName}
-                onChange={(e) => setEventName(e.target.value)}
-                placeholder="e.g. David & Valerie Wedding"
-                className={inputClass}
-                autoFocus
-              />
-            </Field>
-
-            <Field label="Event Date" htmlFor="event_date">
-              <input
-                id="event_date"
-                type="date"
-                required
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Event Type" htmlFor="event_type">
-              <select
-                id="event_type"
-                value={eventType}
-                onChange={(e) => setEventType(e.target.value)}
-                className={selectClass}
-              >
-                <option value="wedding">Wedding</option>
-                <option value="birthday">Birthday</option>
-                <option value="corporate">Corporate</option>
-                <option value="other">Other</option>
-              </select>
-            </Field>
-
-            <div className="pt-2 flex gap-3">
-              <button
-                type="submit"
-                className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
-              >
-                Continue
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (mode === 'global') setStep(clientStepIndex);
-                  else window.location.href = `/admin/clients/${activeClient?.id}`;
-                }}
-                className="flex items-center justify-center rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                {mode === 'global' ? 'Back' : 'Cancel'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ── STEP: SERVICE SELECTION ──────────────────────────────── */}
-      {step === servicesStepIndex && (
-        <div>
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Choose your services</h2>
-            <p className="text-sm text-gray-500 mt-1">Select the experiences included in this event.</p>
-          </div>
 
           <div className="flex flex-col gap-3 mb-6">
             {services.map((service) => {
@@ -414,7 +297,7 @@ export function SharedEventWizard({ mode, clients = [], initialClient, services 
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={handleServicesContinue}
+              onClick={handleServiceContinue}
               className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
             >
               Continue
@@ -422,24 +305,26 @@ export function SharedEventWizard({ mode, clients = [], initialClient, services 
             </button>
             <button
               type="button"
-              onClick={() => setStep(eventStepIndex)}
+              onClick={() => {
+                if (mode === 'global') setStep(clientStepIndex);
+                else window.location.href = initialClient ? `/admin/clients/${initialClient.id}` : '/admin/events';
+              }}
               className="flex items-center justify-center rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              Back
+              {mode === 'global' ? 'Back' : 'Cancel'}
             </button>
           </div>
         </div>
       )}
 
-      {/* ── STEP: REVIEW ────────────────────────────────────────── */}
+      {/* ── STEP: REVIEW & CREATE ─────────────────────────────────────────── */}
       {step === reviewStepIndex && (
         <div>
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Review</h2>
-            <p className="text-sm text-gray-500 mt-1">Confirm the event details before creating.</p>
+            <h2 className="text-lg font-semibold text-gray-900">Create Event</h2>
+            <p className="text-sm text-gray-500 mt-1">Review and confirm before creating.</p>
           </div>
 
-          {/* Review card */}
           <div className="rounded-xl border border-gray-200 bg-white mb-6 overflow-hidden">
             <div className="divide-y divide-gray-100">
               {activeClient && (
@@ -448,16 +333,7 @@ export function SharedEventWizard({ mode, clients = [], initialClient, services 
                   <p className="text-xs font-mono text-gray-500">{activeClient.client_code}</p>
                 </ReviewRow>
               )}
-              <ReviewRow label="Event Name">
-                <p className="text-sm text-gray-900">{eventName}</p>
-              </ReviewRow>
-              <ReviewRow label="Date">
-                <p className="text-sm text-gray-900">{formatDate(eventDate)}</p>
-              </ReviewRow>
-              <ReviewRow label="Type">
-                <p className="text-sm text-gray-900">{eventTypeLabel[eventType]}</p>
-              </ReviewRow>
-              <ReviewRow label="Services">
+              <ReviewRow label="Service">
                 <div className="flex flex-col gap-1.5">
                   {selectedServices.map((s) => (
                     <div key={s.id} className="flex items-center gap-2 text-sm text-gray-900">
@@ -470,12 +346,13 @@ export function SharedEventWizard({ mode, clients = [], initialClient, services 
             </div>
           </div>
 
-          {/* Hidden form that holds all values for the server action */}
+          <p className="text-xs text-gray-400 mb-5">
+            Event name, date, and all service settings will be configured after creation.
+          </p>
+
+          {/* Hidden form that holds values for the server action */}
           <form action={formAction}>
             <input type="hidden" name="client_id" value={activeClient?.id || ''} />
-            <input type="hidden" name="name" value={eventName} />
-            <input type="hidden" name="event_date" value={eventDate} />
-            <input type="hidden" name="event_type" value={eventType} />
             <input type="hidden" name="service_ids" value={JSON.stringify(selectedServiceIds)} />
 
             {state?.error && (
@@ -488,7 +365,7 @@ export function SharedEventWizard({ mode, clients = [], initialClient, services 
               <SubmitButton />
               <button
                 type="button"
-                onClick={() => setStep(servicesStepIndex)}
+                onClick={() => setStep(serviceStepIndex)}
                 className="flex items-center justify-center rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 Back

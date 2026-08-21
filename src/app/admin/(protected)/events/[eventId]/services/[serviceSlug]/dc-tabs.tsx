@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Settings, Key, Image as ImageIcon } from 'lucide-react';
+import { Settings, Key } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 export function DcTabs() {
@@ -12,7 +12,6 @@ export function DcTabs() {
   const tabs = [
     { id: 'configuration', label: 'Configuration', icon: Settings },
     { id: 'access', label: 'Access', icon: Key },
-    { id: 'album', label: 'Album', icon: ImageIcon },
   ];
 
   return (

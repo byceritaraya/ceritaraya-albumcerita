@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadForm } from '@/app/event/[eventId]/upload-form';
 import { PhotoLightbox } from './photo-lightbox';
 import { useT } from '@/lib/i18n/use-t';
 import { LangSwitcher } from '@/app/_components/lang-switcher';
-import { FilmRecipe, FilmRecipeSettings } from '@/lib/film/types';
-import { FilmImage } from '@/lib/film/FilmImage';
-import { FilmRenderer } from '@/lib/film/FilmRenderer';
+import { FilmRecipe } from '@/lib/film/types';
 
 function AutoPublishCountdown({ autoPublishAt, t }: { autoPublishAt: string; t: ReturnType<typeof useT>['t'] }) {
   const [timeLeft, setTimeLeft] = useState('');
@@ -145,7 +143,6 @@ interface PhotoCardProps {
   index: number;
   isSelectMode: boolean;
   selectedPhotoIds: Set<string>;
-  stableFilmRecipe: FilmRecipeSettings | null;
   role: string;
   isPublished?: boolean;
   currentContributorToken?: string;
@@ -162,7 +159,6 @@ function PhotoCard({
   index,
   isSelectMode,
   selectedPhotoIds,
-  stableFilmRecipe,
   role,
   isPublished,
   currentContributorToken,
@@ -185,24 +181,15 @@ function PhotoCard({
         }}
         className={`relative w-full h-full overflow-hidden rounded-2xl bg-[var(--theme-primary)]/10 focus:outline-none ${photo.is_hidden ? 'opacity-40' : ''} ${isSelectMode && isSelected ? 'ring-4 ring-[var(--theme-primary)] ring-inset' : ''}`}
       >
-        {stableFilmRecipe ? (
-          <FilmImage
-            photoId={photo.id}
-            storagePath={photo.storage_path}
-            src={photo.original_url}
-            recipeSettings={stableFilmRecipe}
-            alt={`Photo by ${photo.guest_name}`}
-            className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && isSelected ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-          />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photo.original_url}
-            alt={`Photo by ${photo.guest_name}`}
-            className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && isSelected ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
-            loading="lazy"
-          />
-        )}
+        {/* Photos are already film-processed at upload time — display original_url directly.
+            Passing them through FilmImage again would apply the recipe a second time. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photo.original_url}
+          alt={`Photo by ${photo.guest_name}`}
+          className={`w-full h-full object-cover transition-transform duration-300 ${isSelectMode && isSelected ? 'scale-90 rounded-xl' : 'group-hover:scale-105'}`}
+          loading="lazy"
+        />
       </button>
 
       {/* Checkbox for Select Mode */}
@@ -287,20 +274,9 @@ export function AlbumView({
     setPhotos(initialPhotos);
   }, [initialPhotos]);
 
-  // Extract settings from the full recipe for rendering logic.
-  // This keeps FilmRenderer and FilmImage decoupled from recipe metadata.
-  const stableFilmRecipe = useMemo<FilmRecipeSettings | null>(
-    () => filmRecipe?.settings ?? null,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(filmRecipe?.settings)],
-  );
-
-  // Revoke all rendered Blob URLs when AlbumView unmounts.
-  useEffect(() => {
-    return () => {
-      FilmRenderer.clearCache();
-    };
-  }, []);
+  // filmRecipe is kept on props for UploadForm (pre-upload film roll preview).
+  // The gallery itself does NOT re-apply the recipe — photos stored in Cloudeka
+  // are already film-processed at upload time (see use-film-roll.ts handleUploadBatch).
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -526,7 +502,6 @@ export function AlbumView({
   const sharedCardProps = {
     isSelectMode,
     selectedPhotoIds,
-    stableFilmRecipe,
     role,
     isPublished,
     currentContributorToken,
@@ -773,7 +748,7 @@ export function AlbumView({
           hasNext={selectedIndex < visiblePhotos.length - 1}
           eventName={eventName}
           photoNumber={selectedIndex + 1}
-          filmRecipe={stableFilmRecipe}
+          filmRecipe={null}
           isPublished={isPublished}
           theme={safeTheme.toLowerCase()}
           onDelete={

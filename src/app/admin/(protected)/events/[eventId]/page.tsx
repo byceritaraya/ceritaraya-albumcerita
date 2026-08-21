@@ -121,7 +121,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
               <Activity className="w-4 h-4 text-gray-500" />
-              <h2 className="text-sm font-semibold text-gray-900">Active Services</h2>
+              <h2 className="text-sm font-semibold text-gray-900">Service</h2>
             </div>
             
             <div className="p-6">
@@ -161,7 +161,7 @@ export default async function AdminEventDetailPage({ params }: PageProps) {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-sm text-gray-500">No services active for this event.</p>
+                  <p className="text-sm text-gray-500">No service assigned to this event.</p>
                 </div>
               )}
             </div>

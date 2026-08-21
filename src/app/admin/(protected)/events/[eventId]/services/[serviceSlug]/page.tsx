@@ -3,13 +3,13 @@ import { headers, cookies } from 'next/headers';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { Settings, ArrowLeft, Camera } from 'lucide-react';
+import { Settings, ArrowLeft, Camera, AlertCircle, Film } from 'lucide-react';
 import { DisposableCameraConfigWizard } from './disposable-camera-config-wizard';
 import { DcTabs } from './dc-tabs';
 import { DcAccessTab } from './dc-access-tab';
-import { DcAlbumTab } from './dc-album-tab';
 import { decodePinFlash, PIN_FLASH_COOKIE } from '@/lib/pin-flash';
 import { getMediaUrl } from '@/lib/media';
+import { getActiveFilmRecipesForConfiguration } from '@/lib/film/recipes';
 
 interface PageProps {
   params: Promise<{
@@ -22,14 +22,14 @@ interface PageProps {
 export default async function EventServiceConfigurationPage({ params, searchParams }: PageProps) {
   const { eventId, serviceSlug } = await params;
   const resolvedSearchParams = await searchParams;
-  const currentTab = typeof resolvedSearchParams.tab === 'string' ? resolvedSearchParams.tab : 'overview';
+  const currentTab = typeof resolvedSearchParams.tab === 'string' ? resolvedSearchParams.tab : 'configuration';
   
   const supabase = await createClient();
 
   // 1. Fetch the event to ensure it exists
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, event_id, name, photos_per_guest, max_contributors, retention_months, film_recipe_id, slug, is_published, auto_publish_at, theme, cover_image_url')
+    .select('id, event_id, name, host_name, event_date, photos_per_guest, max_contributors, retention_months, film_recipe_id, slug, is_published, auto_publish_at, theme, cover_image_url')
     .eq('event_id', eventId)
     .single();
 
@@ -48,16 +48,50 @@ export default async function EventServiceConfigurationPage({ params, searchPara
     notFound();
   }
 
-  // 3. Validate that this service is actually enabled for this event
-  const { data: eventService, error: esError } = await supabase
+  // 3. Validate one-event-one-service architecture
+  const { data: allEventServices, error: esError } = await supabase
     .from('event_services')
-    .select('id, status')
-    .eq('event_id', event.id)
-    .eq('service_id', service.id)
-    .single();
+    .select('id, status, services!inner(slug)')
+    .eq('event_id', event.id);
 
-  if (esError || !eventService) {
-    // Service is not enabled for this event. Do not allow configuration!
+  if (esError || !allEventServices || allEventServices.length === 0) {
+    // Zero services
+    notFound();
+  }
+
+  if (allEventServices.length > 1) {
+    // Multiple services detected - violate architecture
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-red-200 p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Invalid Event Configuration</h2>
+          <p className="text-sm text-gray-600 mb-6">
+            This event contains multiple services ({allEventServices.length} attached) and violates the current one-event-one-service architecture. Please resolve this configuration issue.
+          </p>
+          <div className="bg-gray-50 rounded-lg p-3 text-xs font-mono text-gray-500 mb-8 border border-gray-100">
+            Event ID: {event.event_id}
+          </div>
+          <Link
+            href={`/admin/events/${eventId}`}
+            className="inline-flex items-center justify-center w-full gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Event
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const assignedService = allEventServices[0] as unknown as { services: { slug: string } | { slug: string }[] };
+  const assignedSlug = Array.isArray(assignedService.services) 
+    ? assignedService.services[0].slug 
+    : assignedService.services?.slug;
+
+  if (assignedSlug !== serviceSlug) {
     notFound();
   }
 
@@ -74,11 +108,36 @@ export default async function EventServiceConfigurationPage({ params, searchPara
 
   // ── Disposable Camera: load additional data for the wizard ─────────────────
   if (serviceSlug === 'disposable-camera') {
-    const serviceSupabase = createServiceClient();
-    const { data: recipes } = await serviceSupabase
-      .from('film_recipes')
-      .select('id, name, active')
-      .order('name');
+    // Use shared admin helper which already uses the service role client
+    // because admin dashboard uses a custom session, not native Supabase Auth.
+    const { data: recipes, error: recipesError } = await getActiveFilmRecipesForConfiguration();
+
+    if (recipesError) {
+      // Surface the real database error to the admin rather than silently failing.
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-red-200 p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
+              <Film className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Film Recipes Unavailable</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Failed to load Film Recipes from the database. Please check the server configuration.
+            </p>
+            <p className="text-xs font-mono text-red-500 bg-red-50 rounded px-3 py-2 mb-6">
+              {recipesError.message}
+            </p>
+            <Link
+              href={`/admin/events/${eventId}`}
+              className="inline-flex items-center justify-center w-full gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Event
+            </Link>
+          </div>
+        </div>
+      );
+    }
 
     let finalCoverUrl = event.cover_image_url ?? null;
     if (finalCoverUrl) {
@@ -116,31 +175,23 @@ export default async function EventServiceConfigurationPage({ params, searchPara
         <DcTabs />
 
         <div className="mt-6">
-          {currentTab === 'overview' && (
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 max-w-3xl text-center">
-              <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Disposable Camera Active</h2>
-              <p className="text-gray-500 mb-6">This service is active for this event. Use the tabs above to configure settings, manage guest access, or update the public album.</p>
-              <div className="flex justify-center gap-4">
-                <Link href={`?tab=configuration`} className="text-sm font-medium text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors">
-                  Edit Configuration
-                </Link>
-                <Link href={`?tab=access`} className="text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 px-4 py-2 rounded-lg transition-colors">
-                  Get Access Links
-                </Link>
-              </div>
-            </div>
-          )}
           {currentTab === 'configuration' && (
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 max-w-2xl">
               <DisposableCameraConfigWizard
                 eventId={eventId}
-                eventName={event.name}
                 initialValues={{
+                  name: event.name ?? '',
+                  host_name: event.host_name ?? '',
+                  event_date: event.event_date ?? '',
                   photos_per_guest: event.photos_per_guest ?? 10,
                   max_contributors: event.max_contributors ?? 50,
                   retention_months: event.retention_months ?? 3,
                   film_recipe_id: event.film_recipe_id ?? '',
+                  cover_image_url: event.cover_image_url ?? null,
+                  resolved_cover_url: finalCoverUrl,
+                  theme: event.theme ?? 'Sage',
+                  is_published: event.is_published ?? false,
+                  auto_publish_at: event.auto_publish_at ?? null,
                 }}
                 availableRecipes={recipes ?? []}
               />
@@ -152,17 +203,6 @@ export default async function EventServiceConfigurationPage({ params, searchPara
               slug={event.slug} 
               baseUrl={baseUrl} 
               flashData={flashData} 
-            />
-          )}
-          {currentTab === 'album' && (
-            <DcAlbumTab 
-              eventId={eventId} 
-              initialValues={{
-                theme: event.theme ?? 'Sage',
-                cover_image_url: finalCoverUrl,
-                raw_cover_image_url: event.cover_image_url,
-                auto_publish_at: event.auto_publish_at ? new Date(event.auto_publish_at).toISOString().slice(0, 16) : '',
-              }} 
             />
           )}
         </div>
