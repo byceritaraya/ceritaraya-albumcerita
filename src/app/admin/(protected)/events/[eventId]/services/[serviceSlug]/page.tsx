@@ -10,6 +10,7 @@ import { decodePinFlash, PIN_FLASH_COOKIE } from '@/lib/pin-flash';
 import { getMediaUrl } from '@/lib/media';
 import { getActiveFilmRecipesForConfiguration } from '@/lib/film/recipes';
 import { decryptText } from '@/lib/encryption';
+import { WiWorkspace } from './wi-workspace';
 
 interface PageProps {
   params: Promise<{
@@ -237,6 +238,56 @@ export default async function EventServiceConfigurationPage({ params, searchPara
           )}
         </div>
       </div>
+    );
+  }
+
+  // ── Wedding Invitation service workspace ───────────────────────────────────
+  if (serviceSlug === 'wedding-invitation') {
+    // Fetch the WI configuration record (may not exist yet for newly created events)
+    const { data: wiConfig } = await supabase
+      .from('wedding_invitations')
+      .select('id, status, template_id, wedding_invitation_templates(slug)')
+      .eq('event_id', event.id)
+      .maybeSingle();
+
+    let assignedTemplateSlug = null;
+    let sectionRecords: {
+      section_key: string;
+      enabled: boolean;
+      sort_order: number;
+      data: Record<string, unknown>;
+    }[] = [];
+
+    if (wiConfig && wiConfig.wedding_invitation_templates) {
+      // Supabase join syntax typing can be tricky, cast to unknown first
+      const templatesData = wiConfig.wedding_invitation_templates as unknown as { slug: string };
+      assignedTemplateSlug = templatesData.slug;
+
+      const { data: sections } = await supabase
+        .from('wedding_invitation_sections')
+        .select('section_key, enabled, sort_order, data')
+        .eq('invitation_id', wiConfig.id)
+        .order('sort_order', { ascending: true });
+
+      if (sections) {
+        // We know sections shape from select
+        sectionRecords = sections as unknown as {
+          section_key: string;
+          enabled: boolean;
+          sort_order: number;
+          data: Record<string, unknown>;
+        }[];
+      }
+    }
+
+    return (
+      <WiWorkspace
+        eventId={eventId}
+        eventName={event.name ?? 'Untitled Event'}
+        hasConfiguration={!!wiConfig}
+        assignedTemplateSlug={assignedTemplateSlug}
+        sectionRecords={sectionRecords}
+      />
     );
   }
 
