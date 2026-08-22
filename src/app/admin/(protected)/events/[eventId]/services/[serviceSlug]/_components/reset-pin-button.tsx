@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { resetPinAction } from './actions';
+import { resetPinAction } from '../../../actions';
 import { useT } from '@/lib/i18n/use-t';
 
 export function ResetPinButton({ eventId, target = 'legacy' }: { eventId: string, target?: 'legacy' | 'host' | 'guest' }) {

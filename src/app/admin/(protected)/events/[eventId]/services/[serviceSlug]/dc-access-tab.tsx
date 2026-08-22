@@ -1,6 +1,6 @@
 'use client';
 
-import { AccessCard } from '../../access-cards';
+import { AccessCard } from './_components/access-cards';
 import { useT } from '@/lib/i18n/use-t';
 
 interface Props {
