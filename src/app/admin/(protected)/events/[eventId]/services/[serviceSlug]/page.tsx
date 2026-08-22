@@ -252,6 +252,7 @@ export default async function EventServiceConfigurationPage({ params, searchPara
 
     let assignedTemplateSlug = null;
     let sectionRecords: {
+      id: string;
       section_key: string;
       enabled: boolean;
       sort_order: number;
@@ -265,13 +266,14 @@ export default async function EventServiceConfigurationPage({ params, searchPara
 
       const { data: sections } = await supabase
         .from('wedding_invitation_sections')
-        .select('section_key, enabled, sort_order, data')
+        .select('id, section_key, enabled, sort_order, data')
         .eq('invitation_id', wiConfig.id)
         .order('sort_order', { ascending: true });
 
       if (sections) {
         // We know sections shape from select
         sectionRecords = sections as unknown as {
+          id: string;
           section_key: string;
           enabled: boolean;
           sort_order: number;

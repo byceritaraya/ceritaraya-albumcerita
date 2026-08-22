@@ -2,9 +2,10 @@
 
 import { useTransition } from 'react';
 import Link from 'next/link';
-import { Mail, Layers, ArrowLeft, Loader2, ListOrdered, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Layers, ArrowLeft, Loader2, ListOrdered, CheckCircle2, Eye } from 'lucide-react';
 import { assignWeddingInvitationTemplate } from '@/features/wedding-invitation/actions';
 import { getWeddingInvitationTemplate } from '@/features/wedding-invitation/templates/registry';
+import { SectionManagerList } from '@/features/wedding-invitation/components/section-manager-list';
 
 interface WiWorkspaceProps {
   eventId: string;
@@ -12,6 +13,7 @@ interface WiWorkspaceProps {
   hasConfiguration: boolean;
   assignedTemplateSlug: string | null;
   sectionRecords: {
+    id: string;
     section_key: string;
     enabled: boolean;
     sort_order: number;
@@ -52,18 +54,31 @@ export function WiWorkspace({ eventId, eventName, hasConfiguration, assignedTemp
       </nav>
 
       {/* Page header */}
-      <div className="mb-10 flex items-start gap-4">
-        <div className="w-11 h-11 rounded-xl bg-gray-900 flex items-center justify-center flex-shrink-0">
-          <Mail className="w-5 h-5 text-white" />
+      <div className="mb-10 flex items-start justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-gray-900 flex items-center justify-center flex-shrink-0">
+            <Mail className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+              Wedding Invitation
+            </h1>
+            <p className="mt-0.5 text-sm text-gray-500">
+              Workspace for <span className="font-semibold text-gray-700">{eventName}</span>
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-            Wedding Invitation
-          </h1>
-          <p className="mt-0.5 text-sm text-gray-500">
-            Workspace for <span className="font-semibold text-gray-700">{eventName}</span>
-          </p>
-        </div>
+
+        {assignedTemplateSlug && (
+          <Link
+            href={`/admin/events/${eventId}/services/wedding-invitation/preview`}
+            target="_blank"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors shadow-sm"
+          >
+            <Eye className="w-4 h-4" />
+            Preview
+          </Link>
+        )}
       </div>
 
       <div className="max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -142,14 +157,14 @@ export function WiWorkspace({ eventId, eventName, hasConfiguration, assignedTemp
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ListOrdered className="w-4 h-4 text-gray-500" />
-                <h2 className="text-sm font-semibold text-gray-900">Database Section Records</h2>
+                <h2 className="text-sm font-semibold text-gray-900">Section Manager</h2>
               </div>
               <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200 shadow-sm">
-                {sectionRecords.length} records
+                {sectionRecords.length} sections
               </span>
             </div>
 
-            <div className="p-6 flex-1 overflow-auto">
+            <div className="p-6 flex-1 overflow-auto relative">
               {sectionRecords.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center text-gray-500 border-2 border-dashed border-gray-100 rounded-xl p-8">
                   <ListOrdered className="w-8 h-8 text-gray-300 mb-3" />
@@ -157,39 +172,15 @@ export function WiWorkspace({ eventId, eventName, hasConfiguration, assignedTemp
                   <p className="text-xs mt-1">Assign a template to generate default section records.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {sectionRecords.map((record, idx) => (
-                    <div key={record.section_key} className="border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors bg-white">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-bold text-gray-500">
-                            {idx + 1}
-                          </span>
-                          <span className="font-semibold text-gray-900">{record.section_key}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-gray-400 font-mono">Order: {record.sort_order}</span>
-                          {record.enabled ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-md border border-green-100">
-                              <Eye className="w-3 h-3" /> Visible
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-200">
-                              <EyeOff className="w-3 h-3" /> Hidden
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-3 text-xs font-mono text-gray-600 border border-gray-100 overflow-x-auto">
-                        {JSON.stringify(record.data) === '{}' ? (
-                          <span className="text-gray-400 italic">Empty Configuration ({"{}"})</span>
-                        ) : (
-                          JSON.stringify(record.data)
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <SectionManagerList 
+                  eventId={eventId} 
+                  initialSections={sectionRecords.map(r => ({
+                    id: r.id,
+                    section_key: r.section_key,
+                    enabled: r.enabled,
+                    sort_order: r.sort_order
+                  }))} 
+                />
               )}
             </div>
           </div>
